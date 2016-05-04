@@ -26,9 +26,6 @@ using namespace std;
 #define MIN_STEP 0.1
 
 
-
-
-
 // This is a list of the controls for the RobotArm
 // We'll use these constants to access the values 
 // of the controls from the user interface.
@@ -96,13 +93,15 @@ void RobotArm::draw()
 	/* pick up the slider values */
 
 	float theta = VAL( BASE_ROTATION );
+	 //float theta = para->get_theta();
+	// cout<<theta<<endl;
 	float phi = VAL( LOWER_TILT );
 	float psi = VAL( UPPER_TILT );
 	float cr = VAL( CLAW_ROTATION );
 	float h1 = VAL( BASE_LENGTH );
 	float h2 = VAL( LOWER_LENGTH );
 	float h3 = VAL( UPPER_LENGTH );
-	float pc = VAL( PARTICLE_COUNT );
+	float pc = VAL( PARTICLE_COUNT );//zyc
 
     // This call takes care of a lot of the nasty projection 
     // matrix stuff
