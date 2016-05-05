@@ -12,7 +12,7 @@
 #include "particleSystem.h"
 
 
-
+#include <FL/Fl.H>
 #include "mat.h"
 #include <FL/gl.h>
 #include <cstdlib>
@@ -25,6 +25,15 @@ using namespace std;
 #define MAX_VEL 200
 #define MIN_STEP 0.1
 
+float theta = 0.0;
+float phi = 55.0;
+float psi = 30.0;
+float cr = 0.0;
+float h1 = 0.8;
+float h2 = 3.0;
+float h3 = 2.5;
+float pc = 5.0;
+float hclaw = 0.5;
 
 // This is a list of the controls for the RobotArm
 // We'll use these constants to access the values 
@@ -53,6 +62,8 @@ public:
     RobotArm(int x, int y, int w, int h, char *label) 
         : ModelerView(x,y,w,h,label) {}
     virtual void draw();
+    int handle(int event);
+    //Parameter *para;
 };
 
 // We need to make a creator function, mostly because of
@@ -85,23 +96,47 @@ Mat4f glGetMatrix(GLenum pname)
 
 
 
+int RobotArm::handle(int event)
+{
+
+	switch(event)	 
+	{
+	case FL_SHORTCUT: 
+		{
+			//cout<<Fl::event_key()<<endl;
+			switch(Fl::event_key())
+			{
+				case 97: theta += 0.5;	break;//a
+				case 100: theta -= 0.5;	break;//d
+				case 119: h2 += 0.05;	break;//w
+				case 115: h2 -= 0.05;	break;//s
+				case 114: psi += 0.3;	break;//r
+				case 102: psi -= 0.3;	break;//f
+				case 116: cr += 1.0;	break;//t
+				case 103: cr -= 1.0;	break;//g
+				case 65362: hclaw -= 0.05;	break;//up
+				case 65364: hclaw += 0.05;	break;//down
+				default: return ModelerView::handle(event);
+
+			}
+		}
+		break;
+	
+	default:
+		return ModelerView::handle(event);
+	}
+	
+	redraw();
+
+	return 1;
+}
+
 
 // We are going to override (is that the right word?) the draw()
 // method of ModelerView to draw out RobotArm
 void RobotArm::draw()
 {
 	/* pick up the slider values */
-
-	float theta = VAL( BASE_ROTATION );
-	 //float theta = para->get_theta();
-	// cout<<theta<<endl;
-	float phi = VAL( LOWER_TILT );
-	float psi = VAL( UPPER_TILT );
-	float cr = VAL( CLAW_ROTATION );
-	float h1 = VAL( BASE_LENGTH );
-	float h2 = VAL( LOWER_LENGTH );
-	float h3 = VAL( UPPER_LENGTH );
-	float pc = VAL( PARTICLE_COUNT );//zyc
 
     // This call takes care of a lot of the nasty projection 
     // matrix stuff
@@ -164,7 +199,7 @@ void RobotArm::draw()
 	glTranslatef( 0.0, h3, 0.0 );
 	glRotatef( cr, 0.0, 0.0, 1.0 );
 
-	claw(0.5, 0.5, phi, psi, cr);
+	claw(0.5, hclaw, phi, psi, cr);
 
 
 

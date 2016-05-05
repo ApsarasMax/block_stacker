@@ -13,6 +13,8 @@
 #include "modelerapp.h"	// needed to read values from graph widget
 #include "modelerui.h"	// needed to read values from graph widget
 
+#include <FL/Fl.H>
+
 #pragma warning(push)
 #pragma warning(disable : 4244)
 

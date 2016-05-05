@@ -16,21 +16,6 @@ static const int	kMouseZoomButton				= FL_RIGHT_MOUSE;
 
 static const char *bmp_name = NULL;
 
-using namespace std;//zyc
-
-Parameter::Parameter()
-{
-	theta_model=0.0;
-}
-
-void Parameter::set_theta(float val){
-	theta_model = val;
-}
-
-float Parameter::get_theta(){
-	return theta_model;
-}
-
 ModelerView::ModelerView(int x, int y, int w, int h, char *label)
 : Fl_Gl_Window(x,y,w,h,label), t(0), save_bmp(false) 
 {
@@ -51,24 +36,31 @@ int ModelerView::handle(int event)
 	unsigned eventButton = Fl::event_button();
 	unsigned eventState  = Fl::event_state();
 
+	float azi = m_camera->getAzimuth();
+
 	switch(event)	 
 	{
 	case FL_SHORTCUT: 
 		{
+			//cout<<Fl::event_key()<<endl;
 			switch(Fl::event_key())
 			{
-				case 115: cout<<"115"<<endl; 
-				// float val = para->get_theta();//zyc
-				// val -= 0.1; 
-				// para->set_theta(val);
-				break;//s
+				case 65361: 
+				// float azi = m_camera->getAzimuth();
+				azi += 0.05;
+				m_camera->setAzimuth(azi);
+				break;//left
+
+				case 65363: 
+				//float azi_r = m_camera->getAzimuth();
+				azi -= 0.05;
+				m_camera->setAzimuth(azi);
+				break;//right
+
 			}
-			//theta -= 0.1; 
-			// cout<<Fl::event_key() <<endl;
-			// if(Fl::event_key(115))
-			// cout<<"115"<<endl;
 		}
 		break;
+
 	case FL_PUSH: 
 		{
 			switch(eventButton)

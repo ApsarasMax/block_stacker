@@ -17,28 +17,6 @@ typedef ModelerView* (*ModelerViewCreator_f)(int x, int y, int w, int h, char *l
 
 typedef enum { CTRL_MODE, CURVE_MODE } cam_mode_t;
 
-class Parameter{//zyc
-public:
-	Parameter();
-	~Parameter();
-	float theta_model;
-	void set_theta(float val);
-	float get_theta();
-
-
-	// float phi = 55.0;
-	// float psi = 30.0;
-	// float cr = 0.0;
-	// float h1 = 0.8;
-	// float h2 = 3.0;
-	// float h3 = 2.5;
-	// float pc = 5.0;
-
-};
-
-	//Parameter *para;//zyc
-
-
 class ModelerView : public Fl_Gl_Window
 {
 public:
