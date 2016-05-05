@@ -27,6 +27,8 @@
 #include "camera.h"		// for NUM_CAM_CURVES
 #include "linearcurveevaluator.h"
 
+using namespace std;//zyc
+
 #define LEFT		1
 #define MIDDLE		2
 #define RIGHT		3
@@ -336,6 +338,7 @@ int GraphWidget::handle(int event)
 {
 	switch (event) {
 	case FL_PUSH:
+		//cout<<"graphwidget:click"<<endl;
 		m_iMouseX = Fl::event_x();
 		m_iMouseY = Fl::event_y();
 		switch (Fl::event_button()) {
