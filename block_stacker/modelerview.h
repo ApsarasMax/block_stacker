@@ -26,19 +26,13 @@ public:
     virtual int handle(int event);
     virtual void draw();
 
-	void setBMP(const char *fname);
-	void saveBMP(const char* szFileName);
 	void endDraw();
 
 	void camera(cam_mode_t mode);
     Camera *m_camera;
-	Camera *m_ctrl_camera;
-	Camera *m_curve_camera;
 	//Parameter *para;//zyc
 
 	float t;
-	void update();
-	bool save_bmp;
 };
 
 

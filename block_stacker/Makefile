@@ -18,11 +18,10 @@ CC = g++
 .cxx.o: 
 	$(CC) $(CFLAGS) -c -o $*.o $<
 
-ALL.O = bitmap.o camera.o color.o curve.o curveevaluator.o \
-        graphwidget.o indicatorwindow.o linearcurveevaluator.o \
+ALL.O = camera.o color.o \
         modelerapp.o modelerdraw.o modelerui.o animatoruiwindows.o \
         modelerview.o particleSystem.o point.o \
-        rect.o robotarm.o rulerwindow.o
+        rect.o robotarm.o
 
 animator: $(ALL.O)
 	$(CC) $(CFLAGS) -o $@ $(ALL.O) $(INCLUDE) $(LIBDIR) $(LIBS)

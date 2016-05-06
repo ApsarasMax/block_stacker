@@ -13,38 +13,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-// CLASS ModelerControl METHODS
-
-ModelerControl::ModelerControl() : m_minimum(0.0f), m_maximum(1.0f), m_stepsize(0.1f), m_value(0.0f)
-{
-}
-
-ModelerControl::ModelerControl(const char* name, float minimum, float maximum, float stepsize, float value)
-{
-	SetVals(name, minimum, maximum, stepsize, value);
-}
-
-ModelerControl::ModelerControl(const ModelerControl &o)
-{ 
-	operator=(o); 
-}
-
-ModelerControl&	ModelerControl::operator=(const ModelerControl &o)
-{ 
-	if (this != &o) 
-		SetVals(o.m_name, o.m_minimum, o.m_maximum, o.m_stepsize, o.m_value); 
-	return *this;
-}
-
-void ModelerControl::SetVals(const char* name, float minimum, float maximum, float stepsize, float value)
-{
-	strncpy(m_name,name, 128);
-	m_minimum  = minimum;
-	m_maximum  = maximum;
-	m_stepsize = stepsize;
-	m_value    = value;
-}
-
 
 // ****************************************************************************
 
@@ -61,13 +29,9 @@ ModelerApplication* ModelerApplication::Instance()
 	return (m_instance) ? (m_instance) : (m_instance = new ModelerApplication());
 }
 
-void ModelerApplication::Init(ModelerViewCreator_f createView, 
-                              const ModelerControl controls[], unsigned numControls)
+void ModelerApplication::Init(ModelerViewCreator_f createView)
 {
-    int i;
 
-	m_animating   = false;
-	m_numControls = numControls;
 
 #ifdef WIN32
 	DWORD dwBtnFaceColor = GetSysColor(COLOR_BTNFACE);
@@ -84,28 +48,6 @@ void ModelerApplication::Init(ModelerViewCreator_f createView,
     
     m_ui = new ModelerUI();
     
-    // For each control, add appropriate objects to the user interface
-    for (i=0; i<m_numControls; i++)
-    {
-		m_ui->addControl(controls[i].m_name, 
-			controls[i].m_minimum, controls[i].m_maximum,
-			controls[i].m_stepsize, controls[i].m_value);
-    }
-
-	// Add controls for camera properties.  By convention, these
-	// appear at the end of the list after the model's controls
-	m_ui->addControl("Azimuth",	  -20,  20, 0.5f,   0.0f);
-	m_ui->addControl("Elevation", -1.6,  1.6, 0.5f,   0.7f);
-	m_ui->addControl("Dolly",	 -100,  10, 0.5f, -30.0f);
-	m_ui->addControl("Twist",	 -360, 360, 5.0f,   0.0f);
-	m_ui->addControl("LookAt X",  -50,  50, 0.5f,   0.0f);
-	m_ui->addControl("LookAt Y",  -50,  50, 0.5f,   0.0f);
-	m_ui->addControl("LookAt Z",  -50,  50, 0.5f,   0.0f);
-	m_ui->addControl("FOV",		    1, 180, 0.5f,  30.0f);
-
-	// Setup value-changed callback
-	m_ui->setValueChangedCallback(ModelerApplication::ValueChangedCallback);
-
 	ModelerView* modelerView = createView(0, 0, 100, 100 ,NULL);
 	m_ui->replaceModelerView(modelerView);
 }
@@ -118,31 +60,13 @@ ModelerApplication::~ModelerApplication()
 
 int ModelerApplication::Run()
 {
-	if (m_numControls == -1)
-	{
-		fprintf(stderr, "ERROR: ModelerApplication must be initialized before Run()!\n");
-		return -1;
-	}
 
     // Just tell FLTK to go for it.
    	Fl::visual( FL_RGB | FL_DOUBLE );
 	m_ui->show();
 	Fl::add_timeout(0, ModelerApplication::RedrawLoop, NULL);
 
-	// Automatically load animator.ani and animator.ani.cam2 if they exist
-	m_ui->autoLoadNPlay();
-
 	return Fl::run();
-}
-
-double ModelerApplication::GetControlValue(int controlNumber)
-{
-    return m_ui->controlValue(controlNumber);
-}
-
-void ModelerApplication::SetControlValue(int controlNumber, double value)
-{
-    m_ui->controlValue(controlNumber, value);
 }
 
 ParticleSystem *ModelerApplication::GetParticleSystem()
@@ -155,72 +79,8 @@ void ModelerApplication::SetParticleSystem(ParticleSystem *s)
 	ps = s;
 }
 
-float ModelerApplication::GetTime()
-{
-	return m_ui->currTime();
-}
-
-int ModelerApplication::GetFps()
-{
-	return m_ui->fps();
-}
-
-bool ModelerApplication::Animating()
-{
-	return m_animating;
-}
-
-void ModelerApplication::ValueChangedCallback()
-{
-
-	ModelerApplication *m_app = ModelerApplication::Instance();
-
-	ModelerUI *m_ui = m_app->m_ui;
-	float currTime = m_ui->currTime();
-	float endTime = m_ui->endTime();
-	float playEndTime = m_ui->playEndTime();
-
-	ParticleSystem *ps = m_app->GetParticleSystem();
-	
-	if (ps != NULL) {
-		bool simulating = ps->isSimulate();
-
-		// stop simulation if we're at endTime
-		double TIME_EPSILON = 0.05;
-		if (simulating && (currTime >= (playEndTime - TIME_EPSILON))) {
-			ps->stopSimulation(currTime); 
-		} 
-
-		// check to see if we're simulating still
-		simulating = ps->isSimulate();
-		if (simulating != m_ui->simulate()) {
-			// if the psystem is dirty,
-			// we need to sync to it
-			if (ps->isDirty()) {
-				m_ui->simulate(simulating == true);
-			}
-			// otherwise, we sync the psystem
-			// to the ui
-			else if (m_ui->simulate()) {
-				ps->startSimulation(currTime);
-			} else {
-				ps->stopSimulation(currTime);
-			}
-		}
-		ps->setDirty(false);
-	}
-
-	// update camera position
-	m_ui->m_pwndModelerView->m_camera->update(currTime);
-
-	m_ui->redrawModelerView();
-}
-
 void ModelerApplication::RedrawLoop(void*)
 {
-	if (ModelerApplication::Instance()->m_animating)
-		ModelerApplication::Instance()->m_ui->redrawModelerView();
-
 	// 1/50 second update is good enough
 	Fl::add_timeout(0.025, ModelerApplication::RedrawLoop, NULL);
 }

@@ -7,9 +7,6 @@
 #include <cstdio>
 
 #include "camera.h"
-#include "curve.h"
-#include "curveevaluator.h"
-#include "linearcurveevaluator.h"
 #include "modelerapp.h"	// needed to read values from graph widget
 #include "modelerui.h"	// needed to read values from graph widget
 
@@ -19,27 +16,7 @@
 #pragma warning(disable : 4244)
 
 // As of 02sp, the camera curves appear in the "model controls" pane.  
-// The camera curves are always at the end of the list.  This function
-// returns the index of the first camera curve in the list.
-int GetFirstCamCurveIndex()
-{
-	ModelerApplication* app;
-	int total_curves;	// This is the total number of items that appear in the 
-						// "model controls" pane, and equals the number of curves 
-						// for the model + number of curves for the camera.
-
-	app = ModelerApplication::Instance();
-	// The camera curves are always last in the list of "model curves" in the left pane.
-	total_curves = app->GetUI()->m_pwndGraphWidget->numCurves();
-	return total_curves - NUM_CAM_CURVES;
-}
-
-int GetCamCurveIndex(CameraCurve c)
-{
-	return GetFirstCamCurveIndex()+c;
-}
-
-#define CAM_VAL(x) (ModelerApplication::Instance()->GetControlValue(GetCamCurveIndex(x)))
+//#define CAM_VAL(x) (ModelerApplication::Instance()->GetControlValue(GetCamCurveIndex(x)))
 
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502f
@@ -55,7 +32,7 @@ Camera::Camera()
 {
 	mAzimuth = mTwist = 0.0f;
 	mElevation = 0.7f;
-	mDolly = -20.0f;
+	mDolly = -30.0f;
 	mLookAt = Vec3f( 0, 0, 0 );
 	mFOV = 30;
 
@@ -211,68 +188,6 @@ void Camera::applyViewingTransform() {
 	glRotatef( mTwist, F[0], F[1], F[2] );
 }
 
-
-/** Update camera params based on keyframes **/
-void Camera::update(float t)
-{
-	// otherwise, update based on curves
-	mAzimuth	= CAM_VAL(AZIMUTH);
-	mElevation	= CAM_VAL(ELEVATION);
-	mDolly		= CAM_VAL(DOLLY);
-	mTwist		= CAM_VAL(TWIST);
-	mLookAt[0]	= CAM_VAL(LOOKAT_X);
-	mLookAt[1]	= CAM_VAL(LOOKAT_Y);
-	mLookAt[2]	= CAM_VAL(LOOKAT_Z);
-	mFOV		= CAM_VAL(FOV);
-
-	mDirtyTransform = true;
-}
-
-
-
-bool Camera::setKeyframe(float time, float maxTime)
-{
-	for( int i=0; i<NUM_CAM_CURVES; i++ )
-	{
-		int iIndexThisCamCurve = GetCamCurveIndex( (CameraCurve)i );
-
-		Curve* pCurve = ModelerApplication::Instance()->GetUI()->getCurve(iIndexThisCamCurve);
-
-		float fValue;
-		switch(i)
-		{
-		case AZIMUTH:	fValue = getAzimuth();		break; 
-		case ELEVATION:	fValue = getElevation();	break; 
-		case DOLLY:		fValue = getDolly();		break; 
-		case TWIST:		fValue = getTwist();		break; 
-		case LOOKAT_X:	fValue = getLookAt()[0];	break; 
-		case LOOKAT_Y:	fValue = getLookAt()[1];	break; 
-		case LOOKAT_Z:	fValue = getLookAt()[2];	break; 
-		case FOV:		fValue = getFOV();			break; 
-	//	default:	assert(0);	// invalid curve index
-		}
-		
-		pCurve->addControlPoint( Point(time, fValue) );
-	}
-	return true;
-}
-
-
-// When the user click the the range of x around t that camera control points will be removed.
-const float REMOVE_KEYFRAME_RANGE = 0.2f;
-
-void Camera::removeKeyframe(float time)
-{
-	for( int i=0; i<NUM_CAM_CURVES; i++ )
-	{
-		int iIndexThisCamCurve = GetCamCurveIndex( (CameraCurve)i );
-
-		Curve* pCurve = ModelerApplication::Instance()->GetUI()->getCurve(iIndexThisCamCurve);
-
-		pCurve->removeControlPointsInRange( time-REMOVE_KEYFRAME_RANGE/2, time+REMOVE_KEYFRAME_RANGE/2 );
-
-	}
-}
 
 
 #pragma warning(pop)

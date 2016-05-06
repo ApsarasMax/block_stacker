@@ -1,6 +1,5 @@
 #include "modelerview.h"
 #include "camera.h"
-#include "bitmap.h"
 #include "modelerapp.h"
 #include "particleSystem.h"
 
@@ -17,18 +16,15 @@ static const int	kMouseZoomButton				= FL_RIGHT_MOUSE;
 static const char *bmp_name = NULL;
 
 ModelerView::ModelerView(int x, int y, int w, int h, char *label)
-: Fl_Gl_Window(x,y,w,h,label), t(0), save_bmp(false) 
+: Fl_Gl_Window(x,y,w,h,label), t(0) 
 {
-	m_ctrl_camera = new Camera();
-	m_curve_camera = new Camera();
-	camera(CURVE_MODE);
+	m_camera = new Camera();
+	//m_curve_camera = new Camera();
+	//camera(CURVE_MODE);
 }
 
-ModelerView::~ModelerView()
-{
-	delete m_ctrl_camera;
-	delete m_curve_camera;
-}
+ModelerView::~ModelerView(){}
+
 int ModelerView::handle(int event)
 {
     unsigned eventCoordX = Fl::event_x();
@@ -151,6 +147,7 @@ void ModelerView::draw()
 
 
 /** Set the active camera **/
+/*
 void ModelerView::camera(cam_mode_t mode)
 {
 	switch (mode) {
@@ -162,46 +159,11 @@ void ModelerView::camera(cam_mode_t mode)
 		break;
 	}
 }
-
+*/
 
 /** Cleanup fxn for saving bitmaps **/
 void ModelerView::endDraw()
 {
-	if ((bmp_name == NULL) || (!save_bmp)) return;
 	glFinish();
-	saveBMP(bmp_name);
-	save_bmp = false;
-}
-
-
-void ModelerView::setBMP(const char *fname)
-{
-	save_bmp = true;
-	bmp_name = fname;
-}
-
-void ModelerView::saveBMP(const char* szFileName)
-{
-	int xx = x();
-	int yy = y();
-	int ww = w();
-	int hh = h();
-	
-	make_current();
-	
-	unsigned char *imageBuffer = new unsigned char[3 * ww * hh];
-	
-	glReadBuffer(GL_BACK);
-
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glPixelStorei(GL_PACK_ROW_LENGTH, ww);
-    
-    glReadPixels( 0, 0, ww, hh, 
-		GL_RGB, GL_UNSIGNED_BYTE, 
-		imageBuffer );
-	
-	writeBMP(szFileName, ww, hh, imageBuffer);
-	
-	delete [] imageBuffer;
 }
 

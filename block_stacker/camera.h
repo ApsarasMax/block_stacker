@@ -7,8 +7,6 @@
 #include "mat.h"
 #include "rect.h"
 #include "point.h"
-#include "curve.h"
-#include "curveevaluator.h"
 #include <vector>
 
 //==========[ class Camera ]===================================================
@@ -96,10 +94,6 @@ public:
     //---[ Viewing Transform ]--------------------------------
     void applyViewingTransform();
 
-	//---[ Animation ]-------------------------------------
-	void update(float t);
-	bool setKeyframe(float t, float maxT);
-	void removeKeyframe(float t);
 };
 
 #endif
