@@ -7,6 +7,7 @@
 
 #include "modelerview.h"
 
+/*
 struct ModelerControl
 {
 	ModelerControl();
@@ -21,13 +22,14 @@ struct ModelerControl
 	float m_stepsize;
 	float m_value;
 };
+*/
 
 // Forward declarations for ModelerApplication
 class ModelerView;
 class ModelerUI;
-class Fl_Box;
-class Fl_Slider;
-class Fl_Value_Slider;
+//class Fl_Box;
+//class Fl_Slider;
+//class Fl_Value_Slider;
 class ParticleSystem;
 
 // The ModelerApplication is implemented as a "singleton" design pattern,
@@ -41,9 +43,7 @@ public:
 	static ModelerApplication* Instance();
 
     // Initialize the application; see sample models for usage
-	void Init(ModelerViewCreator_f createView, 
-              const ModelerControl controls[], 
-              unsigned numControls); 
+	void Init(ModelerViewCreator_f createView); 
 
     // Starts the application, returns when application is closed
 	int  Run();
@@ -51,26 +51,13 @@ public:
     // Get a pointer to the UI
 	ModelerUI* GetUI() { return m_ui; };
 
-	// Get and set slider values.
-    double GetControlValue(int controlNumber);
-    void   SetControlValue(int controlNumber, double value);
-
 	// Get and set particle system
 	ParticleSystem *GetParticleSystem();
 	void SetParticleSystem(ParticleSystem *s);
 
-	// Return the current time
-	float GetTime();
-
-	// Return the current fps
-	int GetFps();
-
-	// Returns animating flag
-	bool Animating();
-
 private:
 	// Private for singleton
-	ModelerApplication() : m_numControls(-1) { ps = 0; }
+	ModelerApplication(){ ps = 0; }
 	ModelerApplication(const ModelerApplication&) {}
 	ModelerApplication& operator=(const ModelerApplication&) {}
 	
@@ -78,13 +65,8 @@ private:
 	static ModelerApplication *m_instance;
 
 	ModelerUI *m_ui;
-	int					  m_numControls;
 
-    static void ValueChangedCallback();
 	static void RedrawLoop(void*);
-
-	// Just a flag for updates
-	bool m_animating;
 
 	// Particle System variables
 	ParticleSystem *ps;
