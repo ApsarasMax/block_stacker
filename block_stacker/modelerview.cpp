@@ -42,21 +42,17 @@ int ModelerView::handle(int event)
 	{
 	case FL_SHORTCUT: 
 		{
-			//cout<<Fl::event_key()<<endl;
 			switch(Fl::event_key())
 			{
-				case 65361: 
-				// float azi = m_camera->getAzimuth();
+				case 65361: //left
 				azi += 0.05;
 				m_camera->setAzimuth(azi);
-				break;//left
+				break;
 
-				case 65363: 
-				//float azi_r = m_camera->getAzimuth();
+				case 65363: //right
 				azi -= 0.05;
 				m_camera->setAzimuth(azi);
-				break;//right
-
+				break;
 			}
 		}
 		break;

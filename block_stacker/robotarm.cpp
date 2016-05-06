@@ -5,7 +5,7 @@
 #pragma warning(disable : 4786)
 #pragma warning (disable : 4312)
 
-
+#include "camera.h"
 #include "modelerview.h"
 #include "modelerapp.h"
 #include "modelerdraw.h"
@@ -63,7 +63,6 @@ public:
         : ModelerView(x,y,w,h,label) {}
     virtual void draw();
     int handle(int event);
-    //Parameter *para;
 };
 
 // We need to make a creator function, mostly because of
@@ -93,9 +92,6 @@ Mat4f glGetMatrix(GLenum pname)
     return matCam.transpose();
 }
 
-
-
-
 int RobotArm::handle(int event)
 {
 
@@ -103,7 +99,6 @@ int RobotArm::handle(int event)
 	{
 	case FL_SHORTCUT: 
 		{
-			//cout<<Fl::event_key()<<endl;
 			switch(Fl::event_key())
 			{
 				case 97: theta += 0.5;	break;//a
@@ -147,7 +142,7 @@ void RobotArm::draw()
     // While we're at it, save an inverted copy of this matrix.  We'll
     // need it later.
     Mat4f matCam = glGetMatrix( GL_MODELVIEW_MATRIX );
-    //Mat4f matCamInverse = matCam.inverse();
+    Mat4f matCamInverse = matCam.inverse();
 
 
 
@@ -173,33 +168,60 @@ void RobotArm::draw()
 		stone(2, 1.2, 4, 1.2);
 	glPopMatrix();
 
-
-	ground(5);
-	glTranslatef( 5.0, 0.0, -5.0 );	
-	glRotatef( 45, 0.0, 1.0, 0.0 );
-
-	base(0.8);
-
-    glTranslatef( 0.0, 0.8, 0.0 );			// move to the top of the base
-    glRotatef( theta, 0.0, 1.0, 0.0 );		// turn the whole assembly around the y-axis. 
-	rotation_base(h1);						// draw the rotation base
-
-    glTranslatef( 0.0, h1, 0.0 );			// move to the top of the base
 	glPushMatrix();
-			glTranslatef( 0.5, h1, 0.6 );	
+
+		ground(5);
+		glTranslatef( 5.0, 0.0, -5.0 );	
+		glRotatef( 45, 0.0, 1.0, 0.0 );
+
+		base(0.8);
+
+	    glTranslatef( 0.0, 0.8, 0.0 );			// move to the top of the base
+	    glRotatef( theta, 0.0, 1.0, 0.0 );		// turn the whole assembly around the y-axis. 
+		rotation_base(h1);						// draw the rotation base
+
+	    glTranslatef( 0.0, h1, 0.0 );			// move to the top of the base
+		glPushMatrix();
+				glTranslatef( 0.5, h1, 0.6 );	
+		glPopMatrix();
+	    glRotatef( phi, 0.0, 0.0, 1.0 );		// rotate around the z-axis for the lower arm
+		glTranslatef( -0.1, 0.0, 0.4 );
+		lower_arm(h2);							// draw the lower arm
+
+	    glTranslatef( 0.0, h2, 0.0 );			// move to the top of the lower arm
+	    glRotatef( psi, 0.0, 0.0, 1.0 );		// rotate  around z-axis for the upper arm
+		upper_arm(h3);							// draw the upper arm
+
+		glTranslatef( 0.0, h3, 0.0 );
+		glRotatef( cr, 0.0, 0.0, 1.0 );
+
+		claw(0.5, hclaw, phi, psi, cr);
+
+		{
+			glTranslatef(0, 0.25, -0.2502);
+
+			glTranslatef(-0.25, 0.0, 0.0);
+			glRotatef( -phi, 0.0, 0.0, 1.0 );
+			glRotatef( -psi, 0.0, 0.0, 1.0 );
+			glRotatef( -cr, 0.0, 0.0, 1.0 );
+
+			glTranslatef(0.05, -hclaw, 0.2502);
+			glRotatef( -90, 0.0, 1.0, 0.0 );
+
+			glTranslatef(0, -0.2, 0.05);
+			glRotatef( 90, 1.0, 0.0, 0.0 );
+		}
+
+
+		Mat4f matNew = glGetMatrix(GL_MODELVIEW_MATRIX);
+
 	glPopMatrix();
-    glRotatef( phi, 0.0, 0.0, 1.0 );		// rotate around the z-axis for the lower arm
-	glTranslatef( -0.1, 0.0, 0.4 );
-	lower_arm(h2);							// draw the lower arm
+		Mat4f matBase = matCamInverse * matNew;
 
-    glTranslatef( 0.0, h2, 0.0 );			// move to the top of the lower arm
-    glRotatef( psi, 0.0, 0.0, 1.0 );		// rotate  around z-axis for the upper arm
-	upper_arm(h3);							// draw the upper arm
+	Vec3f pos = matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
 
-	glTranslatef( 0.0, h3, 0.0 );
-	glRotatef( cr, 0.0, 0.0, 1.0 );
+	cout<<pos<<endl;
 
-	claw(0.5, hclaw, phi, psi, cr);
 
 
 

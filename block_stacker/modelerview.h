@@ -34,7 +34,6 @@ public:
     Camera *m_camera;
 	Camera *m_ctrl_camera;
 	Camera *m_curve_camera;
-	//Parameter *para;//zyc
 
 	float t;
 	void update();
