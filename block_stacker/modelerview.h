@@ -30,12 +30,7 @@ public:
 
 	void camera(cam_mode_t mode);
     Camera *m_camera;
-<<<<<<< HEAD
-	Camera *m_ctrl_camera;
-	Camera *m_curve_camera;
-=======
 	//Parameter *para;//zyc
->>>>>>> clear-window
 
 	float t;
 };
