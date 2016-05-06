@@ -19,6 +19,7 @@
 
 using namespace std;
 
+
 #define M_DEFAULT 2.0f
 #define M_OFFSET 3.0f
 #define P_OFFSET 0.3f
@@ -34,6 +35,126 @@ float h2 = 3.0;
 float h3 = 2.5;
 float pc = 5.0;
 float hclaw = 0.5;
+
+Vec3f magnetPos (0, 0, 0);
+
+int globalTime;
+int pause;
+
+class stone
+{
+public:
+    stone(float x1, float y1, float z1, float sLength1, Vec3f color1)
+     : x(x1), y(y1), z(z1), sLength(sLength1), color(color1) {};
+    ~stone();
+
+    float x;
+    float y;
+    float z;
+
+    float sLength;
+    Vec3f color;
+
+    bool isHooked;
+    bool isDroped;
+
+    void drawStone(){
+    	setAmbientColor( 0.25, 0.25, 0.65 );
+    	setDiffuseColor( color[0], color[1], color[2] );
+
+        glBegin( GL_QUADS );
+
+        glNormal3d( 1.0 ,0.0, 0.0);         // +x side
+        glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
+        glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+
+        glNormal3d( 0.0 ,0.0, -1.0);        // -z side
+        glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+
+        glNormal3d(-1.0, 0.0, 0.0);         // -x side
+        glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
+        glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+
+        glNormal3d( 0.0, 0.0, 1.0);         // +z side
+        glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
+        glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+
+        glNormal3d( 0.0, 1.0, 0.0);         // top (+y)
+        glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+
+        glNormal3d( 0.0,-1.0, 0.0);         // bottom (-y)
+        glVertex3d( x + sLength / 2.0,  y - sLength, z + sLength / 2.0);
+        glVertex3d( x + sLength / 2.0,  y - sLength, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y - sLength, z - sLength / 2.0);
+        glVertex3d( x - sLength / 2.0,  y - sLength, z + sLength / 2.0);
+
+        glEnd();
+    }
+
+    bool magnetIn(){
+    	if(magnetPos[1]<=sLength 
+    		&& magnetPos[0] > x - sLength/2.0
+    		&& magnetPos[0] < x + sLength/2.0
+    		&& magnetPos[2] > z - sLength/2.0
+    		&& magnetPos[2] > z - sLength/2.0){
+    			isHooked = true;
+    			return true;
+    	}
+    	return false;
+    }
+
+    void setHookedStatus(){
+    		x = magnetPos[0];
+    		y = magnetPos[1];
+    		z = magnetPos[2];
+    		globalTime++;
+    		cout<<globalTime<<endl;
+    }
+
+    void dropIt(){
+    	if(globalTime>20 && isHooked && magnetPos[1] < sLength){
+    		globalTime=0;
+    		isHooked = false;
+    		isDroped = true;
+    	}
+    }
+
+    void resetIsDroped(){
+    	if(isDroped){
+    		if(pause<20){
+    			pause++;
+    		}else{
+    			pause = 0;
+    			isDroped = false;
+    		}
+    	}
+    }
+};
+
+Vec3f color0 ( 0.45, 0.45, 0.45 );
+Vec3f color1 ( 0.35, 0.35, 0.35 );
+Vec3f color2 ( 0.45, 0.45, 0.45 );
+Vec3f color3 ( 0.55, 0.55, 0.55 );
+Vec3f color4 ( 0.65, 0.65, 0.65 );
+
+stone *stone0 = new stone( 3.5, 1.2, 1, 1.2, color0);
+stone *stone1 = new stone( -5, 1.2, 3, 1.2, color1);
+stone *stone2 = new stone( -2, 1.2, 4, 1.2, color2);
+stone *stone3 = new stone( -6, 1.2, -4.5, 1.2, color3);
+// stone *stone4 = new stone( 2, 1.2, 4, 1.2, color4);
+
 
 // This is a list of the controls for the RobotArm
 // We'll use these constants to access the values 
@@ -61,6 +182,7 @@ class RobotArm : public ModelerView
 public:
     RobotArm(int x, int y, int w, int h, char *label) 
         : ModelerView(x,y,w,h,label) {}
+
     virtual void draw();
     int handle(int event);
 };
@@ -110,7 +232,10 @@ int RobotArm::handle(int event)
 				case 116: cr += 1.0;	break;//t
 				case 103: cr -= 1.0;	break;//g
 				case 65362: hclaw -= 0.05;	break;//up
-				case 65364: hclaw += 0.05;	break;//down
+				case 65364: 
+					if(magnetPos[1]>1.2)
+						hclaw += 0.05;	
+					break;//down
 				default: return ModelerView::handle(event);
 
 			}
@@ -145,27 +270,54 @@ void RobotArm::draw()
     Mat4f matCamInverse = matCam.inverse();
 
 
-
 	static GLfloat lmodel_ambient[] = {0.4,0.4,0.4,1.0};
 
 	// define the model
 
 	glPushMatrix();
-		setDiffuseColor( 0.25, 0.25, 0.25 );
-		setAmbientColor( 0.25, 0.25, 0.25 );
-		stone(3.5, 1.2, 1, 1.2);
+		setAmbientColor( 0.25, 0.25, 0.65 );
 
-		setDiffuseColor( 0.35, 0.35, 0.35 );
-		stone(-5, 1.2, 3, 1.2);
+		if(!stone0->isHooked && !stone0->isDroped)
+			stone0->magnetIn();
+		if(stone0->isHooked)
+			stone0->setHookedStatus();
+		stone0->dropIt();
+		stone0->resetIsDroped();
+		stone0->drawStone();
 
-		setDiffuseColor( 0.45, 0.45, 0.45 );
-		stone(-2, 1.2, 4, 1.2);
+		if(!stone1->isHooked && !stone1->isDroped)
+			stone1->magnetIn();
+		if(stone1->isHooked)
+			stone1->setHookedStatus();
+		stone1->dropIt();
+		stone1->resetIsDroped();
+		stone1->drawStone();
 
-		setDiffuseColor( 0.55, 0.55, 0.55 );
-		stone(-6, 1.2, -4.5, 1.2);
+		if(!stone2->isHooked && !stone2->isDroped)
+			stone2->magnetIn();
+		if(stone2->isHooked)
+			stone2->setHookedStatus();
+		stone2->dropIt();
+		stone2->resetIsDroped();
+		stone2->drawStone();
 
-		setDiffuseColor( 0.65, 0.65, 0.65 );
-		stone(2, 1.2, 4, 1.2);
+		if(!stone3->isHooked && !stone3->isDroped)
+			stone3->magnetIn();
+		if(stone3->isHooked)
+			stone3->setHookedStatus();
+		stone3->dropIt();
+		stone3->resetIsDroped();
+		stone3->drawStone();
+
+		// if(!stone4->isHooked && !stone4->isDroped)
+		// 	stone4->magnetIn();
+		// if(stone4->isHooked)
+		// 	stone4->setHookedStatus();
+		// stone4->dropIt();
+		// stone4->resetIsDroped();
+		// stone4->drawStone();
+
+
 	glPopMatrix();
 
 	glPushMatrix();
@@ -210,6 +362,8 @@ void RobotArm::draw()
 
 			glTranslatef(0, -0.2, 0.05);
 			glRotatef( 90, 1.0, 0.0, 0.0 );
+
+			glTranslatef(0, 0, 0.1);
 		}
 
 
@@ -218,9 +372,9 @@ void RobotArm::draw()
 	glPopMatrix();
 		Mat4f matBase = matCamInverse * matNew;
 
-	Vec3f pos = matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
+	magnetPos = matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
 
-	cout<<pos<<endl;
+	//cout<<magnetPos<<endl;
 
 
 
@@ -423,8 +577,6 @@ void claw(float r, float h, float phi, float psi, float cr) {
 
 	glPopMatrix();
 	glEnable(GL_LIGHTING);
-
-
 }
 
 void y_box(float h) {
@@ -519,6 +671,7 @@ int main()
 	// You should create a ParticleSystem object ps here and then
 	// call ModelerApplication::Instance()->SetParticleSystem(ps)
 	// to hook it up to the animator interface.
+
 
     ModelerApplication::Instance()->Init(&createRobotArm);
     return ModelerApplication::Instance()->Run();
