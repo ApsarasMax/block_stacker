@@ -30,10 +30,10 @@ public:
        isInPosition(false) {};
     ~Stone();
 
-    bool inSquare(float x1,float z1){
-	float halfLength=sLength/2.0f;
-	return x1<x+halfLength && x1>x-halfLength &&
-	       z1<z+halfLength && z1>z-halfLength;
+    bool inStone(float x1,float z1){
+    	float halfLength=sLength/2.0f;
+    	return x1<x+halfLength && x1>x-halfLength &&
+    	       z1<z+halfLength && z1>z-halfLength;
     }
 
     bool getIsOnMagnet(){
@@ -76,7 +76,7 @@ public:
 	return Vec3f(x,y,z);
     }
 
-    float getLength(){
+    float getSLength(){
 	return sLength;
     }
 

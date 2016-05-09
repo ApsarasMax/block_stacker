@@ -4,6 +4,9 @@
 #define animatoruiwindows_h
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Text_Display.H>
+#include <FL/Fl_Text_Buffer.H>
 #include <FL/Fl_Group.H>
 #include "modelerview.h"
 
@@ -11,6 +14,9 @@ class ModelerUIWindows {
 public:
   ModelerUIWindows();
   Fl_Window *m_pwndModelerWnd;
+  Fl_Window *m_pwndScoreWnd;
+  Fl_Text_Buffer *m_pwndTxtBuf;
+  Fl_Text_Display *m_pwndTxtDis;
   ModelerView *m_pwndModelerView;
 };
 #endif
