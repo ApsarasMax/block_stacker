@@ -29,6 +29,7 @@ using namespace std;
 #define MAX_VEL 200
 #define MIN_STEP 0.1
 
+//parameters
 float theta = 0.0;
 float thetaMin=-180.0;
 float thetaMax=180.0;
@@ -44,12 +45,12 @@ float crMin=-30.0;
 float crMax=180.0;
 
 float h1 = 0.8;
-
 float h2 = 3.0;
-float h2Min=1.0;
-float h2Max=20.0;
 
 float h3 = 2.5;
+float h3Min=1.0;
+float h3Max=20.0;
+
 float pc = 5.0;
 
 float hclaw = 0.5;
@@ -58,6 +59,13 @@ float hclawMax=FLT_MAX;
 
 
 Vec3f magnetPos (0, 0, 0);
+
+//must add stone on this region(variant)
+bool dropOnGround = true;
+float xMin=-2.5;
+float xMax=2.5;
+float zMin=-2.5;
+float zMax=2.5;
 
 
 // This is a list of the controls for the RobotArm
@@ -77,7 +85,7 @@ void upper_arm(float h);
 void claw(float r, float h, float phi, float psi, float cr);
 void y_box(float h);
 void stone(float x, float y, float z, float sLength);
-bool inSquarePosition(Vec3f pos,float length);
+bool inRightPosition(Vec3f pos,float length);
 Mat4f glGetMatrix(GLenum pname);
 Vec3f getWorldPoint(Mat4f matCamXforms);
 
@@ -96,18 +104,21 @@ public:
 	targetStone=0;
 
 	//TODO: make colors and positions random
-        Vec3f color0 ( 0.45, 0.45, 0.45 );
+    Vec3f color0 ( 0.45, 0.45, 0.45 );
 	Vec3f color1 ( 0.35, 0.35, 0.35 );
 	Vec3f color2 ( 0.45, 0.45, 0.45 );
 	Vec3f color3 ( 0.55, 0.55, 0.55 );
+	Vec3f color4 ( 0.65, 0.65, 0.65 );
 
 	stoneVec.push_back(new Stone( 3.5, 1.2, 1, 1.2, color0));
 	stoneVec.push_back(new Stone( -5, 1.2, 3, 1.2, color1));
 	stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
 	stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
+	stoneVec.push_back(new Stone(  2, 1.2, 4, 1.2, color4));
+
     }
 
-    float getMinLength(Vec3f magPos);
+    float getAltitude(Vec3f magPos);
     virtual void draw();
     int handle(int event);
     Vec3f updateMagnetPos();
@@ -129,8 +140,7 @@ ModelerView* createRobotArm(int x, int y, int w, int h, char *label)
 
 // Utility function.  Use glGetMatrix(GL_MODELVIEW_MATRIX) to retrieve
 //  the current ModelView matrix.
-Mat4f glGetMatrix(GLenum pname)
-{
+Mat4f glGetMatrix(GLenum pname){
     GLfloat m[16];
     glGetFloatv(pname, m);
     Mat4f matCam(m[0],  m[1],  m[2],  m[3],
@@ -142,10 +152,15 @@ Mat4f glGetMatrix(GLenum pname)
     return matCam.transpose();
 }
 
-bool inSquarePosition(Vec3f pos,float length){
-    float threshold=2.5+length/2.0;
-    return pos[0]<threshold && pos[0]>-threshold &&
-	   pos[2]<threshold && pos[2]>-threshold;
+bool inRightPosition(Vec3f pos,float length){
+	if(dropOnGround){
+	   dropOnGround = false;
+		return pos[0]<xMax-length/2.0 && pos[0]>xMin+length/2.0 &&
+	   pos[2]<zMax-length/2.0 && pos[2]>zMin+length/2.0;
+	}else{
+		return pos[0]<xMax && pos[0]>xMin &&
+	   pos[2]<zMax && pos[2]>zMin;
+	}
 }
 
 void RobotArm::reset(){
@@ -164,10 +179,17 @@ void RobotArm::reset(){
     isHooked=false;
     targetStone=0;
 
+    dropOnGround = true;
+	xMin=-2.5;
+	xMax=2.5;
+	zMin=-2.5;
+	zMax=2.5;
+
     Vec3f color0 ( 0.45, 0.45, 0.45 );
     Vec3f color1 ( 0.35, 0.35, 0.35 );
     Vec3f color2 ( 0.45, 0.45, 0.45 );
     Vec3f color3 ( 0.55, 0.55, 0.55 );
+    Vec3f color4 ( 0.65, 0.65, 0.65 );
 
     stoneVec.clear();
 
@@ -175,7 +197,9 @@ void RobotArm::reset(){
     stoneVec.push_back(new Stone( -5, 1.2, 3, 1.2, color1));
     stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
     stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
+    stoneVec.push_back(new Stone( 2, 1.2, 4, 1.2, color4));
     magnetPos=updateMagnetPos();
+
 }
 
 void RobotArm::update(float& qName,float min, float max, float stepSize){
@@ -183,42 +207,53 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
     if(qName+stepSize>max){
 	    qName=max;
     }else{
-	if(qName+stepSize<min){
-	    qName=min;
-	}else{
-	    qName+=stepSize;
-	}
+		if(qName+stepSize<min){
+		    qName=min;
+		}else{
+		    qName+=stepSize;
+		}
     }
     Vec3f magPos=updateMagnetPos();
     float deltaX=magPos[0]-magnetPos[0];
     float deltaY=magPos[1]-magnetPos[1];
     float deltaZ=magPos[2]-magnetPos[2];
 
+    cout<<"getAltitude(magPos): "<<getAltitude(magPos)<<endl;
+    
     if(isHooked){
-	if(targetStone->getBottomHeight()+deltaY>getMinLength(magPos)){
-	    Vec3f pos=targetStone->getPosition();
-	    targetStone->setX(pos[0]+deltaX);
-	    targetStone->setY(pos[1]+deltaY);
-	    targetStone->setZ(pos[2]+deltaZ);
-	}else{
-	    if(inSquarePosition(targetStone->getPosition(),targetStone->getLength())){
-	        isHooked=false;
-		targetStone->setIsInPosition(true);
-	        targetStone->setIsOnMagnet(false);
-	        targetStone=0;
-	    }
-	    qName=oldQName;
-	    return;
-	}
+		if(targetStone->getBottomHeight()+deltaY>getAltitude(magPos)){
+			//cout<<"targetStone->getBottomHeight(): "<<targetStone->getBottomHeight()<<endl;
+		    Vec3f pos=targetStone->getPosition();
+		    targetStone->setX(pos[0]+deltaX);
+		    targetStone->setY(pos[1]+deltaY);
+		    targetStone->setZ(pos[2]+deltaZ);
+		}else{
+		    if(inRightPosition(targetStone->getPosition(),targetStone->getSLength())){
+		        isHooked=false;
+				targetStone->setIsInPosition(true);
+		        targetStone->setIsOnMagnet(false);
+
+		        //set for the right region(can only add on stone, not square)
+		        xMin = targetStone->getPosition()[0] - targetStone->getSLength();
+		        xMax = targetStone->getPosition()[0] + targetStone->getSLength();
+		        zMin = targetStone->getPosition()[2] - targetStone->getSLength();
+		        zMax = targetStone->getPosition()[2] + targetStone->getSLength();
+
+		        targetStone=0;
+
+		    }
+		    qName=oldQName;
+		    return;
+		}
     }else{
-	if(magPos[1]-getMinLength(magPos)<FLT_EPSILON){
-	    if(targetStone && !targetStone->getIsInPosition()){
-	        isHooked=true;
-	        targetStone->setIsOnMagnet(true);
-	    }
-	    qName=oldQName;
-	    return;
-	}
+		if(magPos[1]-getAltitude(magPos)<FLT_EPSILON){
+		    if(targetStone && !targetStone->getIsInPosition()){
+		        isHooked=true;
+		        targetStone->setIsOnMagnet(true);
+		    }
+		    qName=oldQName;
+		    return;
+		}
     }
 
     magnetPos=magPos;
@@ -273,17 +308,17 @@ Vec3f RobotArm::updateMagnetPos(){
 	return matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
 }
 
-float RobotArm::getMinLength(Vec3f magPos){
+float RobotArm::getAltitude(Vec3f magPos){
     float maxHeight=0.0f;
     Stone* maxStone=0;
 
     for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
-	if((*it)->inSquare(magPos[0],magPos[2])){
-	    if((*it)->getTopHeight()>maxHeight && (*it)!=maxStone && !(*it)->getIsOnMagnet()){
-		maxHeight=(*it)->getTopHeight();
-		maxStone=*it;
-	    }
-	}
+		if((*it)->inStone(magPos[0],magPos[2])){
+		    if((*it)->getTopHeight()>maxHeight && (*it)!=maxStone && !(*it)->getIsOnMagnet()){
+				maxHeight=(*it)->getTopHeight();
+				maxStone=*it;
+		    }
+		}
     }
     if(!isHooked)
         targetStone=maxStone;
@@ -302,8 +337,8 @@ int RobotArm::handle(int event)
 			{
 				case 97: update(theta,thetaMin,thetaMax,0.5);	break;//a
 				case 100: update(theta,thetaMin,thetaMax,-0.5);	break;//d
-				case 119: update(h2,h2Min,h2Max,0.05);	break;//w
-				case 115: update(h2,h2Min,h2Max,-0.05);	break;//s
+				case 119: update(h3,h3Min,h3Max,0.05);	break;//w
+				case 115: update(h3,h3Min,h3Max,-0.05);	break;//s
 				case 114: update(psi,psiMin,psiMax,0.3);	break;//r
 				case 102: update(psi,psiMin,psiMax,-0.3);	break;//f
 				case 116: update(cr,crMin,crMax,1.0);	break;//t
@@ -403,7 +438,6 @@ void RobotArm::draw()
 
 	magnetPos = matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
 		
-	//cout<<magnetPos<<endl;
 	glPushMatrix();
 		setAmbientColor( 0.25, 0.25, 0.65 );	
 
@@ -431,8 +465,7 @@ void square(float frameSLength){
 	glEnd();
 }
 
-void ground(float frameSLength) 
-{
+void ground(float frameSLength){
 	glDisable(GL_LIGHTING);
 	glColor3f(0.65,0.45,0.2);
 	glPushMatrix();
@@ -540,13 +573,13 @@ void claw(float r, float h, float phi, float psi, float cr) {
 	glVertex3d(-0.25, 0.0,-0.25);
 	glVertex3d(-0.25, 0.0, 0.25);
 
-	glNormal3d( 1.0,  0.0,  0.0);	// z side
+	glNormal3d( 0.0,  0.0,  1.0);	// z side
 	glVertex3d( -0.25, 0.0, 0.2501);
 	glVertex3d( 0.25, 0.0, 0.2501);
 	glVertex3d( 0.25,   r/2.0, 0.2501);
 	glVertex3d( -0.25,   r/2.0, 0.2501);
 
-	glNormal3d( -1.0,  0.0,  0.0);	// -z side
+	glNormal3d( 0.0,  0.0,  -1.0);	// -z side
 	glVertex3d( -0.25, 0.0,-0.2501);
 	glVertex3d( 0.25, 0.0,-0.2501);
 	glVertex3d( 0.25,   r/2.0,-0.2501);
@@ -569,7 +602,7 @@ void claw(float r, float h, float phi, float psi, float cr) {
 		glRotatef( -cr, 0.0, 0.0, 1.0 );
 		glBegin(GL_LINES);			
 			glVertex3f(0.0, 0.0, 0.0);
-			glVertex3f(0.0, 0.0-h, -0.0502);//x need to ba a para
+			glVertex3f(0.0, 0.0-h, -0.0502);
 		glEnd();
 
 	glPopMatrix();
@@ -590,7 +623,7 @@ void claw(float r, float h, float phi, float psi, float cr) {
 		glRotatef( -cr, 0.0, 0.0, 1.0 );
 		glBegin(GL_LINES);
 			glVertex3f(0.0, 0.0, 0.0);
-			glVertex3f(0.0, 0.0-h, 0.0502);//x need to ba a para
+			glVertex3f(0.0, 0.0-h, 0.0502);
 		glEnd();
 		glEnable(GL_LIGHTING);
 
@@ -700,7 +733,6 @@ int main()
 	// You should create a ParticleSystem object ps here and then
 	// call ModelerApplication::Instance()->SetParticleSystem(ps)
 	// to hook it up to the animator interface.
-
 
     ModelerApplication::Instance()->Init(&createRobotArm);
     return ModelerApplication::Instance()->Run();
