@@ -11,6 +11,7 @@
 #include "modelerdraw.h"
 #include "particleSystem.h"
 #include "stone.h"
+#include "bbox.h"
 
 
 #include <FL/Fl.H>
@@ -88,6 +89,11 @@ private:
     vector<Stone*> stoneVec;
     Stone* targetStone;
     bool isHooked;
+
+    BoundingBox* lowerArmBox;
+    BoundingBox* upperArmBox;
+    BoundingBox* clawTipBox;
+    BoundingBox* clawCylinderBox;
 public:
     RobotArm(int x, int y, int w, int h, char *label) 
         : ModelerView(x,y,w,h,label) {
@@ -105,6 +111,8 @@ public:
 	stoneVec.push_back(new Stone( -5, 1.2, 3, 1.2, color1));
 	stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
 	stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
+
+	magnetPos=updateMagnetPos();
     }
 
     float getMinLength(Vec3f magPos);
@@ -143,7 +151,7 @@ Mat4f glGetMatrix(GLenum pname)
 }
 
 bool inSquarePosition(Vec3f pos,float length){
-    float threshold=2.5+length/2.0;
+    float threshold=2.5-length/2.0;
     return pos[0]<threshold && pos[0]>-threshold &&
 	   pos[2]<threshold && pos[2]>-threshold;
 }
@@ -240,12 +248,82 @@ Vec3f RobotArm::updateMagnetPos(){
 	    glTranslatef( 0.0, h1, 0.0 );			// move to the top of the base
 	    glRotatef( phi, 0.0, 0.0, 1.0 );		// rotate around the z-axis for the lower arm
 		glTranslatef( -0.1, 0.0, 0.4 );
+		//lower-arm bounding box
+		{
+		    Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		    Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		    Vec3f center=baseMatrix*Vec4f(0,h2/2.0,0,0);
+		    Vec3f vec1=baseMatrix*Vec4f(1,0,0,1);
+		    vec1.normalize();
+		    Vec3f vec2=baseMatrix*Vec4f(0,1,0,1);
+		    vec2.normalize();
+		    Vec3f vec3=baseMatrix*Vec4f(0,0,1,1);
+		    vec3.normalize();
+		    float a1=0.25;
+		    float a2=h2/2.0;
+		    float a3=0.25;
+		    lowerArmBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		}
 
 	    glTranslatef( 0.0, h2, 0.0 );			// move to the top of the lower arm
 	    glRotatef( psi, 0.0, 0.0, 1.0 );		// rotate  around z-axis for the upper arm
+		//upper-arm bounding box
+		{
+		    Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		    Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		    Vec3f center=baseMatrix*Vec4f(0,h3/2.0,0,0);
+		    Vec3f vec1=baseMatrix*Vec4f(1,0,0,1);
+		    vec1.normalize();
+		    Vec3f vec2=baseMatrix*Vec4f(0,1,0,1);
+		    vec2.normalize();
+		    Vec3f vec3=baseMatrix*Vec4f(0,0,1,1);
+		    vec3.normalize();
+		    float a1=0.25;
+		    float a2=h3/2.0;
+		    float a3=0.25;
+		    upperArmBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		}
+
+
 
 		glTranslatef( 0.0, h3, 0.0 );
 		glRotatef( cr, 0.0, 0.0, 1.0 );
+		//claw-tip bounding box
+		{
+		    Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		    Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		    Vec3f center=baseMatrix*Vec4f(0,0.25,0,0);
+		    Vec3f vec1=baseMatrix*Vec4f(1,0,0,1);
+		    vec1.normalize();
+		    Vec3f vec2=baseMatrix*Vec4f(0,1,0,1);
+		    vec2.normalize();
+		    Vec3f vec3=baseMatrix*Vec4f(0,0,1,1);
+		    vec3.normalize();
+		    float a1=0.25;
+		    float a2=0.25;
+		    float a3=0.2501;
+		    clawTipBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		}
+		glPushMatrix();
+		    glTranslatef(0, 0.25, -0.25);
+		    //claw-cyclinder bounding box
+		    {
+		        Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		        Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		        Vec3f center=baseMatrix*Vec4f(0,0,0.25,0);
+		        Vec3f vec1=baseMatrix*Vec4f(1,0,0,1);
+		        vec1.normalize();
+		        Vec3f vec2=baseMatrix*Vec4f(0,1,0,1);
+		        vec2.normalize();
+		        Vec3f vec3=baseMatrix*Vec4f(0,0,1,1);
+		        vec3.normalize();
+		        float a1=0.25;
+		        float a2=0.25;
+		        float a3=0.25;
+		        clawCylinderBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		    }
+	        glPopMatrix();
+
 
 		{
 			glTranslatef(0, 0.25, -0.2502);
