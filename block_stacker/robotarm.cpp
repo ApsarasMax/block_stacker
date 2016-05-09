@@ -255,8 +255,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 
 		        score += targetStone->getSLength();
 
-
-		    	char text[200];
+		    	char text[500];
 				strcpy (text,buffer->text());
 				strcat (text,"\t...placed...\n");
 				strcat (text,"\tcurrent score: ");
