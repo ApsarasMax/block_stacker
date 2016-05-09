@@ -11,6 +11,7 @@
 #include "modelerdraw.h"
 #include "particleSystem.h"
 #include "stone.h"
+#include "modelerui.h"
 
 
 #include <FL/Fl.H>
@@ -66,6 +67,9 @@ float xMin=-2.5;
 float xMax=2.5;
 float zMin=-2.5;
 float zMax=2.5;
+
+float score = 0.0;
+
 
 
 // This is a list of the controls for the RobotArm
@@ -185,6 +189,8 @@ void RobotArm::reset(){
 	zMin=-2.5;
 	zMax=2.5;
 
+	score = 0.0;
+
     Vec3f color0 ( 0.45, 0.45, 0.45 );
     Vec3f color1 ( 0.35, 0.35, 0.35 );
     Vec3f color2 ( 0.45, 0.45, 0.45 );
@@ -203,6 +209,15 @@ void RobotArm::reset(){
 }
 
 void RobotArm::update(float& qName,float min, float max, float stepSize){
+    
+	//experiment//zyc
+	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
+	// char text[200];
+	// strcpy (text,buffer->text());
+	// strcat (text,"strings \n");
+	// //cout<<text<<endl;
+	// buffer->text(text);
+
     float oldQName=qName;
     if(qName+stepSize>max){
 	    qName=max;
@@ -218,11 +233,10 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
     float deltaY=magPos[1]-magnetPos[1];
     float deltaZ=magPos[2]-magnetPos[2];
 
-    cout<<"getAltitude(magPos): "<<getAltitude(magPos)<<endl;
+    //cout<<"getAltitude(magPos): "<<getAltitude(magPos)<<endl;
     
     if(isHooked){
 		if(targetStone->getBottomHeight()+deltaY>getAltitude(magPos)){
-			//cout<<"targetStone->getBottomHeight(): "<<targetStone->getBottomHeight()<<endl;
 		    Vec3f pos=targetStone->getPosition();
 		    targetStone->setX(pos[0]+deltaX);
 		    targetStone->setY(pos[1]+deltaY);
@@ -239,8 +253,20 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        zMin = targetStone->getPosition()[2] - targetStone->getSLength();
 		        zMax = targetStone->getPosition()[2] + targetStone->getSLength();
 
-		        targetStone=0;
+		        score += targetStone->getSLength();
 
+
+		    	char text[200];
+				strcpy (text,buffer->text());
+				strcat (text,"\t...placed...\n");
+				strcat (text,"\tcurrent score: ");
+				char foo[10];
+				sprintf(foo, "%.2f\n\n", score);
+				strcat (text,foo);
+				//strcat (text,"\tcurrent score: 01 \n\n");
+				buffer->text(text);
+
+		        targetStone=0;
 		    }
 		    qName=oldQName;
 		    return;
@@ -250,6 +276,11 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		    if(targetStone && !targetStone->getIsInPosition()){
 		        isHooked=true;
 		        targetStone->setIsOnMagnet(true);
+
+		    	char text[200];
+				strcpy (text,buffer->text());
+				strcat (text,"\t...hooked...\n");
+				buffer->text(text);
 		    }
 		    qName=oldQName;
 		    return;
@@ -257,6 +288,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
     }
 
     magnetPos=magPos;
+    //delete text;
 }
 
 Vec3f RobotArm::updateMagnetPos(){

@@ -12,16 +12,17 @@ ModelerUIWindows::ModelerUIWindows() {
     }
     o->end();
   }
-  { Fl_Window* o = m_pwndScoreWnd = new Fl_Window(300, 200, "Score");//add 400 on both length and width//zyc
+
+  { Fl_Window* o = m_pwndScoreWnd = new Fl_Window(300, 500, "Score");//add 400 on both length and width//zyc
     w = o;
     o->user_data((void*)(this));
     o->when(FL_WHEN_NEVER);
-    { Fl_Box* o = m_pwndBox = new Fl_Box(0, 0, 200, 40, "0");
-      o->box(FL_ENGRAVED_BOX);
-      o->labelfont(FL_BOLD+FL_ITALIC);
-      o->labeltype(FL_NORMAL_LABEL);
-      o->align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE);
+    { 
+      Fl_Text_Buffer *buff = m_pwndTxtBuf = new Fl_Text_Buffer();
+      Fl_Text_Display* o = m_pwndTxtDis = new Fl_Text_Display(0, 0, 300, 500, "string");
+      o->buffer(buff);
       o->show();
+      buff->text("Game Start: \n\n");
     }
     o->end();
   }

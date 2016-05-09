@@ -34,7 +34,7 @@ void ModelerUI::show()
 	// m_pwndModelerWnd->resize(40 + m_pwndMainWnd->w(), 30,
 	// 	m_pwndModelerWnd->w(), m_pwndModelerWnd->h());
 	m_pwndModelerWnd->show();
-	//m_pwndScoreWnd->show();
+	m_pwndScoreWnd->show();
 }
 
 void ModelerUI::replaceModelerView(ModelerView* pwndNewModelerView)
@@ -44,7 +44,6 @@ void ModelerUI::replaceModelerView(ModelerView* pwndNewModelerView)
 
 	m_pwndModelerView = pwndNewModelerView;
 	m_pwndModelerView->resize(0, 10, m_pwndModelerWnd->w(), m_pwndModelerWnd->h()/1);
-	//m_pwndModelerView->resize(0, 0, m_pwndBox->w(), m_pwndBox->h());
 	m_pwndModelerWnd->add_resizable(*m_pwndModelerView);
 }
 
