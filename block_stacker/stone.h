@@ -9,7 +9,37 @@
 #include "point.h"
 #include <vector>
 
+#include <GL/glut.h>    // Header File For The GLUT Library 
+#include <GL/gl.h>  // Header File For The OpenGL32 Library
+#include <GL/glu.h> // Header File For The GLu32 Library
+
 //==========[ class Stone ]===================================================
+GLuint texid;
+GLuint texwidth=2;
+GLuint texheight=2;
+
+GLubyte texData[64] =
+{
+  0xbF,0xbF,0xFF,0xFF, // blue // comments are not corresponding
+  0xa0,0xFF,0xFF,0xFF, // rgreen
+  0x00,0xFF,0xFF,0xFF, // rgreen
+  0xFF,0xFF,0xFF,0xFF, // blue
+
+  0x00,0xFF,0xFF,0xFF, // rgreen
+  0xbF,0xbF,0xFF,0xFF, // blue
+  0xFF,0xFF,0xFF,0xFF, // blue
+  0xa0,0xFF,0xFF,0xFF, // rgreen
+  0xa0,0xFF,0xFF,0xFF, // rgreen
+  0xFF,0xFF,0xFF,0xFF, // blue
+  0xbF,0xbF,0xFF,0xFF, // blue
+  0x00,0xFF,0xFF,0xFF, // rgreen
+
+  0xFF,0xFF,0xFF,0xFF, // blue
+  0x00,0xFF,0xFF,0xFF, // rgreen
+  0xa0,0xFF,0xFF,0xFF, // rgreen
+  0xbF,0xbF,0xFF,0xFF, // blue
+};
+
 
 class Stone
 {
@@ -86,8 +116,10 @@ public:
 
     void drawStone(){
     	setAmbientColor( 0.25, 0.25, 0.65 );
-    	setDiffuseColor( color[0], color[1], color[2] );
+        
 
+    if(!isInPosition){//!isInPosition
+        setDiffuseColor( color[0], color[1], color[2] );
         glBegin( GL_QUADS );
 
         glNormal3d( 1.0 ,0.0, 0.0);         // +x side
@@ -127,6 +159,62 @@ public:
         glVertex3d( x - sLength / 2.0,  y - sLength, z + sLength / 2.0);
 
         glEnd();
+
+    }else{
+
+        setDiffuseColor( 1, 1, 1 );
+
+        glGenTextures(1,&texid);
+        glBindTexture(GL_TEXTURE_2D,texid);  //Sélectionne ce n°
+        glTexImage2D (GL_TEXTURE_2D, 0, 3, 4, 4, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData); 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);//GL_NEAREST
+
+        glEnable(GL_TEXTURE_2D);
+        glShadeModel(GL_SMOOTH);      // Enables Smooth Color Shading
+
+        glBegin( GL_QUADS );
+
+            glNormal3d( 1.0 ,0.0, 0.0);         // +x side
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+
+            glNormal3d( 0.0 ,0.0, -1.0);        // -z side
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+
+            glNormal3d(-1.0, 0.0, 0.0);         // -x side
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+
+            glNormal3d( 0.0, 0.0, 1.0);         // +z side
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+
+            glNormal3d( 0.0, 1.0, 0.0);         // top (+y)
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
+
+            glNormal3d( 0.0,-1.0, 0.0);         // bottom (-y)
+            glTexCoord2f(0.0f, 0.0f); glVertex3d( x + sLength / 2.0,  y - sLength, z + sLength / 2.0);
+            glTexCoord2f(1.0f, 0.0f); glVertex3d( x + sLength / 2.0,  y - sLength, z - sLength / 2.0);
+            glTexCoord2f(1.0f, 1.0f); glVertex3d( x - sLength / 2.0,  y - sLength, z - sLength / 2.0);
+            glTexCoord2f(0.0f, 1.0f); glVertex3d( x - sLength / 2.0,  y - sLength, z + sLength / 2.0);
+
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+
     }
 
 };

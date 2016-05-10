@@ -33,6 +33,9 @@ int ModelerView::handle(int event)
 	unsigned eventState  = Fl::event_state();
 
 	float azi = m_camera->getAzimuth();
+	float ele = m_camera->getElevation();
+	//std::cout<<ele<<std::endl;
+
 
 	switch(event)	 
 	{
@@ -49,6 +52,17 @@ int ModelerView::handle(int event)
 				azi -= 0.05;
 				m_camera->setAzimuth(azi);
 				break;
+
+				case 65362: //up
+				ele -= 0.04;
+				m_camera->setElevation(ele);
+				break;
+
+				case 65364: //down
+				ele += 0.04;
+				m_camera->setElevation(ele);
+				break;
+
 			}
 		}
 		break;

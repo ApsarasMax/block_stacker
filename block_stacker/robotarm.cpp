@@ -368,14 +368,16 @@ int RobotArm::handle(int event)
 			{
 				case 97: update(theta,thetaMin,thetaMax,0.5);	break;//a
 				case 100: update(theta,thetaMin,thetaMax,-0.5);	break;//d
-				case 119: update(h3,h3Min,h3Max,0.05);	break;//w
-				case 115: update(h3,h3Min,h3Max,-0.05);	break;//s
-				case 114: update(psi,psiMin,psiMax,0.3);	break;//r
-				case 102: update(psi,psiMin,psiMax,-0.3);	break;//f
-				case 116: update(cr,crMin,crMax,1.0);	break;//t
-				case 103: update(cr,crMin,crMax,-1.0);	break;//g
-				case 65362: update(hclaw,hclawMin,hclawMax, -0.05);    break;//up
-				case 65364: update(hclaw,hclawMin,hclawMax,0.05);   break;//down
+				case 119: update(hclaw,hclawMin,hclawMax, -0.05); break;//w
+				case 115: update(hclaw,hclawMin,hclawMax,0.05);   break;//s
+				case 49: update(phi,psiMin,psiMax,-0.3);	break;//1
+				case 50: update(phi,psiMin,psiMax,0.3);	break;//2
+				case 51: update(h3,h3Min,h3Max,0.05);	break;//3
+				case 52: update(h3,h3Min,h3Max,-0.05);	break;//4
+				case 53: update(psi,psiMin,psiMax,-0.3);	break;//5
+				case 54: update(psi,psiMin,psiMax,0.3);	break;//6
+				case 55: update(cr,crMin,crMax,1.0);	break;//7
+				case 56: update(cr,crMin,crMax,-1.0);	break;//8
 				case 65307: reset();    break;//Esc
 				default: return ModelerView::handle(event);
 			}
@@ -488,7 +490,7 @@ void RobotArm::draw()
 
 void square(float frameSLength){
 	glBegin(GL_POLYGON);
-		glColor3f(0.0f, 0.4f, 0.4f);
+		glColor3f(0.65,0.85,0.85);
 		glVertex3d( frameSLength / 2.0,0.0, frameSLength / 2.0);
 		glVertex3d(-frameSLength / 2.0,0.0, frameSLength / 2.0);
 		glVertex3d(-frameSLength / 2.0,0.0,-frameSLength / 2.0);
@@ -498,13 +500,13 @@ void square(float frameSLength){
 
 void ground(float frameSLength){
 	glDisable(GL_LIGHTING);
-	glColor3f(0.65,0.45,0.2);
+	glColor3f(0.65,0.45,0.4);
 	glPushMatrix();
 		glScalef(30,0,30);
 		y_box(1);
 	glPopMatrix();
 	glPushMatrix();
-		glTranslatef( 0, 0.05, 0 );	
+		glTranslatef( 0, 0.05, 0 );
 		square(frameSLength);
 	glPopMatrix();
 	glEnable(GL_LIGHTING);
@@ -622,7 +624,7 @@ void claw(float r, float h, float phi, float psi, float cr) {
 	glPushMatrix();
 		glTranslatef(0, 0.25, 0.2502);
 		glLineWidth(2); 
-
+		glColor3f(0, 0.8, 0.8);
 		glBegin(GL_LINES);
 			glVertex3f(0.0, 0.0, 0.0);
 			glVertex3f(-0.25, 0, 0);
@@ -656,16 +658,19 @@ void claw(float r, float h, float phi, float psi, float cr) {
 			glVertex3f(0.0, 0.0, 0.0);
 			glVertex3f(0.0, 0.0-h, 0.0502);
 		glEnd();
+		
 		glEnable(GL_LIGHTING);
-
+		
 	glTranslatef(0.05, -h, 0.2502);
 	glRotatef( -90, 0.0, 1.0, 0.0 );
-	setDiffuseColor( 0, 0.5, 0.5 );
+	setDiffuseColor( 0, 0.8, 0.8 );
+	setAmbientColor( 0.95, 0.75, 0.25 );
 	drawCylinder(0.10, 0.2, 0.2);
 
 	glTranslatef(0, -0.2, 0.05);
 	glRotatef( 90, 1.0, 0.0, 0.0 );
-	setDiffuseColor( 0.2, 0.2, 0.2 );
+	setDiffuseColor( 0.8, 0.8, 0.8 );
+	setAmbientColor( 0.95, 0.75, 0.25 );
 	drawCylinder(0.1, 0.05, 0.05);
 
 	glPopMatrix();
