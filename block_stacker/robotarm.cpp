@@ -11,6 +11,7 @@
 #include "modelerdraw.h"
 #include "particleSystem.h"
 #include "stone.h"
+#include "bbox.h"
 #include "modelerui.h"
 
 
@@ -100,6 +101,11 @@ private:
     vector<Stone*> stoneVec;
     Stone* targetStone;
     bool isHooked;
+
+    BoundingBox* lowerArmBox;
+    BoundingBox* upperArmBox;
+    BoundingBox* clawTipBox;
+    BoundingBox* clawCylinderBox;
 public:
     RobotArm(int x, int y, int w, int h, char *label) 
         : ModelerView(x,y,w,h,label) {
@@ -108,7 +114,7 @@ public:
 	targetStone=0;
 
 	//TODO: make colors and positions random
-    Vec3f color0 ( 0.45, 0.45, 0.45 );
+        Vec3f color0 ( 0.45, 0.45, 0.45 );
 	Vec3f color1 ( 0.35, 0.35, 0.35 );
 	Vec3f color2 ( 0.45, 0.45, 0.45 );
 	Vec3f color3 ( 0.55, 0.55, 0.55 );
@@ -119,6 +125,8 @@ public:
 	stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
 	stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
 	stoneVec.push_back(new Stone(  2, 1.2, 4, 1.2, color4));
+
+	magnetPos=updateMagnetPos();
 
     }
 
@@ -236,13 +244,29 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
     //cout<<"getAltitude(magPos): "<<getAltitude(magPos)<<endl;
     
     if(isHooked){
-		if(targetStone->getBottomHeight()+deltaY>getAltitude(magPos)){
+		for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
+		    if(*it!=targetStone){
+		        if(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
+		           clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
+			    qName=oldQName;
+			    return;
+			}
+		    }
+		}
+	
+		vector<Vec3f*> bottomPoints=targetStone->getBottomPoints();
+		
+		if(targetStone->getBottomHeight()+deltaY>getAltitude(*(bottomPoints[0])) && 
+		   targetStone->getBottomHeight()+deltaY>getAltitude(*(bottomPoints[1])) &&
+		   targetStone->getBottomHeight()+deltaY>getAltitude(*(bottomPoints[2])) &&
+		   targetStone->getBottomHeight()+deltaY>getAltitude(*(bottomPoints[3]))){ 
 		    Vec3f pos=targetStone->getPosition();
 		    targetStone->setX(pos[0]+deltaX);
 		    targetStone->setY(pos[1]+deltaY);
 		    targetStone->setZ(pos[2]+deltaZ);
 		}else{
 		    if(inRightPosition(targetStone->getPosition(),targetStone->getSLength())){
+			//TODO: add particle system
 		        isHooked=false;
 				targetStone->setIsInPosition(true);
 		        targetStone->setIsOnMagnet(false);
@@ -271,6 +295,15 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		    return;
 		}
     }else{
+		//check intersection here
+		for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
+		    if(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
+		       clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
+			qName=oldQName;
+			return;
+		    }
+		}
+		
 		if(magPos[1]-getAltitude(magPos)<FLT_EPSILON){
 		    if(targetStone && !targetStone->getIsInPosition()){
 		        isHooked=true;
@@ -306,12 +339,74 @@ Vec3f RobotArm::updateMagnetPos(){
 	    glTranslatef( 0.0, h1, 0.0 );			// move to the top of the base
 	    glRotatef( phi, 0.0, 0.0, 1.0 );		// rotate around the z-axis for the lower arm
 		glTranslatef( -0.1, 0.0, 0.4 );
+		//lower-arm bounding box
+		{
+		    glPushMatrix();
+			glTranslatef(0.0,h2/2.0f,0.0);
+		        Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		        Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		        Vec3f center=baseMatrix*Vec4f(0,0,0,1);
+		        Vec3f vec1=baseMatrix*Vec4f(1,0,0,0);
+		        vec1.normalize();
+		        Vec3f vec2=baseMatrix*Vec4f(0,1,0,0);
+		        vec2.normalize();
+		        Vec3f vec3=baseMatrix*Vec4f(0,0,1,0);
+		        vec3.normalize();
+		        float a1=0.25;
+		        float a2=h2/2.0;
+		        float a3=0.25;
+		        lowerArmBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		    glPopMatrix();
+		}
 
 	    glTranslatef( 0.0, h2, 0.0 );			// move to the top of the lower arm
 	    glRotatef( psi, 0.0, 0.0, 1.0 );		// rotate  around z-axis for the upper arm
+		//upper-arm bounding box
+		{
+		    glPushMatrix();
+			glTranslatef(0,h3/2.0f,0);
+		        Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		        Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		        Vec3f center=baseMatrix*Vec4f(0,0,0,1);
+		        Vec3f vec1=baseMatrix*Vec4f(1,0,0,0);
+		        vec1.normalize();
+		        Vec3f vec2=baseMatrix*Vec4f(0,1,0,0);
+		        vec2.normalize();
+		        Vec3f vec3=baseMatrix*Vec4f(0,0,1,0);
+		        vec3.normalize();
+		        float a1=0.25;
+		        float a2=h3/2.0;
+		        float a3=0.25;
+		        upperArmBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);
+		    glPopMatrix();
+		}
+
+
 
 		glTranslatef( 0.0, h3, 0.0 );
 		glRotatef( cr, 0.0, 0.0, 1.0 );
+		//claw-tip bounding box
+		{
+		    glPushMatrix();
+			glTranslatef(0,0.25,0);
+		        Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		        Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		        Vec3f center=baseMatrix*Vec4f(0,0,0,1);
+		        Vec3f vec1=baseMatrix*Vec4f(1,0,0,0);
+		        vec1.normalize();
+		        Vec3f vec2=baseMatrix*Vec4f(0,1,0,0);
+		        vec2.normalize();
+		        Vec3f vec3=baseMatrix*Vec4f(0,0,1,0);
+		        vec3.normalize();
+		        float a1=0.25;
+		        float a2=0.25;
+		        float a3=0.2501;
+		        clawTipBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);	
+		    glPopMatrix();
+		}
+		//glPushMatrix();
+		//    glTranslatef(0, 0.25, -0.25);
+		//glPopMatrix();
 
 		{
 			glTranslatef(0, 0.25, -0.2502);
@@ -323,6 +418,26 @@ Vec3f RobotArm::updateMagnetPos(){
 
 			glTranslatef(0.05, -hclaw, 0.2502);
 			glRotatef( -90, 0.0, 1.0, 0.0 );
+			
+		        //claw-cyclinder bounding box
+			{
+			    glPushMatrix();
+			        glTranslatef(0,0,0.05);
+		                Mat4f curModelViewMatrix=glGetMatrix(GL_MODELVIEW_MATRIX);
+		                Mat4f baseMatrix=matCamInverse*curModelViewMatrix;
+		                Vec3f center=baseMatrix*Vec4f(0,0,0,1);
+		                Vec3f vec1=baseMatrix*Vec4f(1,0,0,0);
+		                vec1.normalize();
+		                Vec3f vec2=baseMatrix*Vec4f(0,1,0,0);
+		                vec2.normalize();
+		                Vec3f vec3=baseMatrix*Vec4f(0,0,1,0);
+		                vec3.normalize();
+		                float a1=0.2;
+		                float a2=0.2;
+		                float a3=0.05;
+		                clawCylinderBox=new BoundingBox(center,vec1,vec2,vec3,a1,a2,a3);
+			    glPopMatrix();
+		        }
 
 			glTranslatef(0, -0.2, 0.05);
 			glRotatef( 90, 1.0, 0.0, 0.0 );
@@ -335,6 +450,7 @@ Vec3f RobotArm::updateMagnetPos(){
 
 	glPopMatrix();
 		Mat4f matBase = matCamInverse * matNew;
+
 
 	return matBase * Vec4f(0.0, 0.0, 0.0, 1.0);
 }
@@ -660,18 +776,18 @@ void claw(float r, float h, float phi, float psi, float cr) {
 		glEnd();
 		
 		glEnable(GL_LIGHTING);
-		
-	glTranslatef(0.05, -h, 0.2502);
-	glRotatef( -90, 0.0, 1.0, 0.0 );
-	setDiffuseColor( 0, 0.8, 0.8 );
-	setAmbientColor( 0.95, 0.75, 0.25 );
-	drawCylinder(0.10, 0.2, 0.2);
 
-	glTranslatef(0, -0.2, 0.05);
-	glRotatef( 90, 1.0, 0.0, 0.0 );
-	setDiffuseColor( 0.8, 0.8, 0.8 );
-	setAmbientColor( 0.95, 0.75, 0.25 );
-	drawCylinder(0.1, 0.05, 0.05);
+		glTranslatef(0.05, -h, 0.2502);
+		glRotatef( -90, 0.0, 1.0, 0.0 );
+		setDiffuseColor( 0, 0.8, 0.8 );
+		setAmbientColor( 0.95, 0.75, 0.25 );
+		drawCylinder(0.10, 0.2, 0.2);
+
+		glTranslatef(0, -0.2, 0.05);
+		glRotatef( 90, 1.0, 0.0, 0.0 );
+		setDiffuseColor( 0.8, 0.8, 0.8 );
+		setAmbientColor( 0.95, 0.75, 0.25 );
+		drawCylinder(0.1, 0.05, 0.05);
 
 	glPopMatrix();
 	glEnable(GL_LIGHTING);
