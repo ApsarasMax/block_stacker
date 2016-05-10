@@ -7,11 +7,12 @@
 #include "mat.h"
 #include "rect.h"
 #include "point.h"
+#include "bbox.h"
 #include <vector>
 
 //==========[ class Stone ]===================================================
 
-class Stone
+class Stone : public BoundingBox
 {
 private:
     float x;
@@ -24,10 +25,22 @@ private:
     bool isOnMagnet;
     bool isInPosition;
 
+    //TODO: add orientation
+
 public:
     Stone(float x1, float y1, float z1, float sLength1, Vec3f color1)
      : x(x1), y(y1), z(z1), sLength(sLength1), color(color1), isOnMagnet(false),
-       isInPosition(false) {};
+       isInPosition(false) {
+	bEmpty=false;
+	center=Vec3f(x1,y1-sLength1/2.0f,z1);
+	vec1=Vec3f(1,0,0);
+	a1=sLength1/2.0f;
+	vec2=Vec3f(0,1,0);
+	a2=sLength1/2.0f;
+	vec3=Vec3f(0,0,1);
+	a3=sLength1/2.0f;
+    };
+    
     ~Stone();
 
     bool inStone(float x1,float z1){
@@ -57,23 +70,43 @@ public:
     }
 
     void setX(float x){
+	center=Vec3f(x,y-sLength/2.0f,z);
 	this->x=x;
     }
 
     void setY(float y){
+	center=Vec3f(x,y-sLength/2.0f,z);
 	this->y=y;
     }
 
     void setZ(float z){
+	center=Vec3f(x,y-sLength/2.0f,z);
 	this->z=z;
+    }
+
+    float getX(){
+	return x;
     }
 
     float getY(){
 	return y;
     }
 
+    float getZ(){
+	return z;
+    }
+
     Vec3f getPosition(){
 	return Vec3f(x,y,z);
+    }
+
+    std::vector<Vec3f*> getBottomPoints(){
+	std::vector<Vec3f*> returnVal;
+	returnVal.push_back(new Vec3f(x-sLength/2.0f,y-sLength,z-sLength/2.0f));
+	returnVal.push_back(new Vec3f(x-sLength/2.0f,y-sLength,z+sLength/2.0f));
+	returnVal.push_back(new Vec3f(x+sLength/2.0f,y-sLength,z-sLength/2.0f));
+	returnVal.push_back(new Vec3f(x+sLength/2.0f,y-sLength,z+sLength/2.0f));
+	return returnVal;
     }
 
     float getSLength(){
