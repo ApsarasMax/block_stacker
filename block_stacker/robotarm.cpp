@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <cfloat>
 #include <vector>
+#include <assert.h>
 
 using namespace std;
 
@@ -217,7 +218,8 @@ void RobotArm::reset(){
 }
 
 void RobotArm::update(float& qName,float min, float max, float stepSize){
-    
+
+        
 	//experiment//zyc
 	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
 	// char text[200];
@@ -226,6 +228,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 	// //cout<<text<<endl;
 	// buffer->text(text);
 
+    float tolerence=0.005;
     float oldQName=qName;
     if(qName+stepSize>max){
 	    qName=max;
@@ -236,6 +239,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		    qName+=stepSize;
 		}
     }
+    float oldStepSize=stepSize;
     Vec3f magPos=updateMagnetPos();
     float deltaX=magPos[0]-magnetPos[0];
     float deltaY=magPos[1]-magnetPos[1];
@@ -248,8 +252,31 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		    if(*it!=targetStone){
 		        if(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
 		           clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
-			    qName=oldQName;
-			    return;
+			    stepSize=oldQName-qName;
+			    while(fabs(stepSize)>tolerence){
+			        stepSize/=2.0f;
+			        qName=oldQName+stepSize;
+			        magPos=updateMagnetPos();
+			        deltaX=magPos[0]-magnetPos[0];
+			        deltaY=magPos[1]-magnetPos[1];
+			        deltaZ=magPos[2]-magnetPos[2];
+
+			        if(!lowerArmBox->intersect(*(*it)) && !upperArmBox->intersect(*(*it)) &&
+		                   !clawTipBox->intersect(*(*it)) && !clawCylinderBox->intersect(*(*it))){
+				    oldQName=qName;
+			        }
+			    }
+			    int diffSign=fabs(oldStepSize)*oldStepSize<0;
+			    while(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
+		       	          clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
+			        qName-=pow(-1,diffSign)*tolerence;
+			        magPos=updateMagnetPos();
+			        deltaX=magPos[0]-magnetPos[0];
+			        deltaY=magPos[1]-magnetPos[1];
+			        deltaZ=magPos[2]-magnetPos[2];
+			    }
+			    //qName=oldQName;
+			    //return;
 			}
 		    }
 		}
@@ -299,8 +326,29 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
 		    if(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
 		       clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
-			qName=oldQName;
-			return;
+			stepSize=oldQName-qName;
+			while(fabs(stepSize)>tolerence){
+			    stepSize/=2.0f;
+			    qName=oldQName+stepSize;
+			    magPos=updateMagnetPos();
+			    deltaX=magPos[0]-magnetPos[0];
+			    deltaY=magPos[1]-magnetPos[1];
+			    deltaZ=magPos[2]-magnetPos[2];
+
+			    if(!lowerArmBox->intersect(*(*it)) && !upperArmBox->intersect(*(*it)) &&
+		               !clawTipBox->intersect(*(*it)) && !clawCylinderBox->intersect(*(*it))){
+				    oldQName=qName;
+			    }
+			}
+			int diffSign=fabs(oldStepSize)*oldStepSize<0;
+			while(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
+		       	      clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
+			    qName-=pow(-1,diffSign)*tolerence;
+			    magPos=updateMagnetPos();
+			    deltaX=magPos[0]-magnetPos[0];
+			    deltaY=magPos[1]-magnetPos[1];
+			    deltaZ=magPos[2]-magnetPos[2];
+			}
 		    }
 		}
 		
@@ -315,6 +363,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 				buffer->text(text);
 		    }
 		    qName=oldQName;
+		    updateMagnetPos();
 		    return;
 		}
     }

@@ -45,6 +45,8 @@ GLubyte texData[64] =
 class Stone : public BoundingBox
 {
 private:
+    const float density=710.0f; // kg/m3
+
     float x;
     float y;
     float z;
@@ -55,7 +57,27 @@ private:
     bool isOnMagnet;
     bool isInPosition;
 
-    //TODO: add orientation
+    //TODO: add rigid body motion
+
+    float lastUpdatedTime;
+
+    float mass;
+    Mat3f Ibody; //inertia tensor
+    Mat3f Ibodyinv;
+
+    //triple x is indeed center
+    Mat3f R; //rotation
+    Vec3f P;
+    Vec3f L;
+
+    //auxiliary variables
+    Mat3f Iinv;
+    Vec3f v;
+    Vec3f omega;
+
+    //computed quantities
+    Vec3f force;
+    Vec3f torque;
 
 public:
     Stone(float x1, float y1, float z1, float sLength1, Vec3f color1)
@@ -69,9 +91,26 @@ public:
 	a2=sLength1/2.0f;
 	vec3=Vec3f(0,0,1);
 	a3=sLength1/2.0f;
+
+        lastUpdatedTime=0.0f;
+	mass=density*sLength1*sLength1;
+	Ibody=mass*pow(sLength1,2.0f)*Mat3f(1,0,0,0,1,0,0,0,1);
+	Ibodyinv=Ibody.inverse();
+
+	R=Mat3f(0,0,0,0,0,0,0,0,0);
+	P=Vec3f(0,0,0);
+	L=Vec3f(0,0,0);
+
+	
     };
     
     ~Stone();
+
+    /**********************
+    * Rigdig body related *
+    ***********************/
+
+    
 
     bool inStone(float x1,float z1){
     	float halfLength=sLength/2.0f;
