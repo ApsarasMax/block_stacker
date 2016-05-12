@@ -114,7 +114,7 @@ public:
 	targetStone=0;
 
 	//TODO: make colors and positions random
-        Vec3f color0 ( 0.45, 0.45, 0.45 );
+    Vec3f color0 ( 0.45, 0.45, 0.45 );
 	Vec3f color1 ( 0.35, 0.35, 0.35 );
 	Vec3f color2 ( 0.45, 0.45, 0.45 );
 	Vec3f color3 ( 0.55, 0.55, 0.55 );
@@ -617,7 +617,7 @@ void square(float frameSLength){
 
 void ground(float frameSLength){
 	glDisable(GL_LIGHTING);
-	glColor3f(0.65,0.45,0.4);
+	glColor3f(0.75,0.45,0.6);
 	glPushMatrix();
 		glScalef(30,0,30);
 		y_box(1);
