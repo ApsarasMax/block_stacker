@@ -205,6 +205,12 @@ void RobotArm::reset(){
     Vec3f color3 ( 0.55, 0.55, 0.55 );
     Vec3f color4 ( 0.65, 0.65, 0.65 );
 
+    char text[500];
+	strcat (text,"Game Start: \n\n\t        [---Instructions---]\n\t|  Use Up, Down, Left, Right   |\n\t|  to control the perspective, |\n\t|  Use w, a, s, d, 1, 2, 3, 4        |\n\t|  to control the stacker]        |\n\n");
+	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
+	buffer->text(text);
+
+
     stoneVec.clear();
 
     stoneVec.push_back(new Stone( 3.5, 1.2, 1, 1.2, color0));
@@ -220,11 +226,6 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
     
 	//experiment//zyc
 	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
-	// char text[200];
-	// strcpy (text,buffer->text());
-	// strcat (text,"strings \n");
-	// //cout<<text<<endl;
-	// buffer->text(text);
 
     float oldQName=qName;
     if(qName+stepSize>max){
@@ -309,7 +310,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        isHooked=true;
 		        targetStone->setIsOnMagnet(true);
 
-		    	char text[200];
+		    	char text[500];
 				strcpy (text,buffer->text());
 				strcat (text,"\t...hooked...\n");
 				buffer->text(text);
