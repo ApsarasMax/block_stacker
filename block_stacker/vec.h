@@ -11,6 +11,7 @@ using std::max;
 
 #include <iostream>
 #include <cmath>
+#include <cfloat>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -290,6 +291,9 @@ public:
 
 	void normalize() { 
 		double len = length();
+		if(len<FLT_EPSILON){
+		    return;
+		}
 		n[0] /= len; n[1] /= len; n[2] /= len;
 	}
 

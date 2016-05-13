@@ -55,6 +55,8 @@ public:
 	ParticleSystem *GetParticleSystem();
 	void SetParticleSystem(ParticleSystem *s);
 
+	ModelerView* modelerView;
+
 private:
 	// Private for singleton
 	ModelerApplication(){ ps = 0; }

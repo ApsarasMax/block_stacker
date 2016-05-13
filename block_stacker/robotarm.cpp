@@ -22,6 +22,9 @@
 #include <cfloat>
 #include <vector>
 #include <assert.h>
+#include <pthread.h>
+
+#include <ode/ode.h>
 
 using namespace std;
 
@@ -31,6 +34,12 @@ using namespace std;
 #define P_OFFSET 0.3f
 #define MAX_VEL 200
 #define MIN_STEP 0.1
+
+static dWorldID world;
+static dSpaceID space;
+static dJointGroupID contactgroup;
+
+vector<Stone*> stoneVec;
 
 //parameters
 float theta = 0.0;
@@ -99,7 +108,6 @@ Vec3f getWorldPoint(Mat4f matCamXforms);
 class RobotArm : public ModelerView 
 {
 private:
-    vector<Stone*> stoneVec;
     Stone* targetStone;
     bool isHooked;
 
@@ -277,6 +285,42 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 			    }
 			    //qName=oldQName;
 			    //return;
+			}else{
+			    if(targetStone->intersect(*(*it))){
+				stepSize=oldQName-qName;
+			        while(fabs(stepSize)>tolerence){
+			            stepSize/=2.0f;
+			            qName=oldQName+stepSize;
+			            magPos=updateMagnetPos();
+			            deltaX=magPos[0]-magnetPos[0];
+			            deltaY=magPos[1]-magnetPos[1];
+			            deltaZ=magPos[2]-magnetPos[2];
+				    magnetPos=magPos;
+				    Vec3f pos=targetStone->getPosition();
+		     		    targetStone->setX(pos[0]+deltaX);
+		     		    targetStone->setY(pos[1]+deltaY);
+		    		    targetStone->setZ(pos[2]+deltaZ);
+
+
+			            if(!targetStone->intersect(*(*it))){
+				        oldQName=qName;
+			            }
+			        }
+			        int diffSign=fabs(oldStepSize)*oldStepSize<0;
+			        while(targetStone->intersect(*(*it))){
+			            qName-=pow(-1,diffSign)*tolerence;
+			            magPos=updateMagnetPos();
+			            deltaX=magPos[0]-magnetPos[0];
+			            deltaY=magPos[1]-magnetPos[1];
+			            deltaZ=magPos[2]-magnetPos[2];
+				    magnetPos=magPos;
+				    Vec3f pos=targetStone->getPosition();
+		    		    targetStone->setX(pos[0]+deltaX);
+		    		    targetStone->setY(pos[1]+deltaY);
+		    		    targetStone->setZ(pos[2]+deltaZ);
+			        }
+									
+			    }
 			}
 		    }
 		}
@@ -292,11 +336,24 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		    targetStone->setY(pos[1]+deltaY);
 		    targetStone->setZ(pos[2]+deltaZ);
 		}else{
+		    
 		    if(inRightPosition(targetStone->getPosition(),targetStone->getSLength())){
-			//TODO: add particle system
+			//TODO: add simulation
+
 		        isHooked=false;
-				targetStone->setIsInPosition(true);
+			targetStone->setIsInPosition(true);
 		        targetStone->setIsOnMagnet(false);
+			targetStone->body=dBodyCreate(world);
+			Vec3f center=targetStone->getCenter();
+			dBodySetPosition(targetStone->body,center[0],center[1],center[2]);
+			dReal rotation[12];
+			dRSetIdentity(rotation);
+			dBodySetRotation(targetStone->body,rotation);
+			targetStone->geom=dCreateBox(space,targetStone->sLength,targetStone->sLength,targetStone->sLength);
+			dGeomSetBody(targetStone->geom,targetStone->body);
+			dGeomSetData(targetStone->geom,targetStone);
+			dBodySetMass(targetStone->body,&(targetStone->mass));
+			dBodySetGravityMode(targetStone->body,1);
 
 		        //set for the right region(can only add on stone, not square)
 		        xMin = targetStone->getPosition()[0] - targetStone->getSLength();
@@ -319,7 +376,8 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        targetStone=0;
 		    }
 		    qName=oldQName;
-		    return;
+		    updateMagnetPos();
+		    return;	
 		}
     }else{
 		//check intersection here
@@ -640,7 +698,10 @@ void RobotArm::draw()
 		setAmbientColor( 0.25, 0.25, 0.65 );	
 
 		for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
-		    (*it)->drawStone();
+		    if((*it)->isInPosition){
+			(*it)->updatePosition();
+		    }
+		        (*it)->drawStone();
 		}
 
 	glPopMatrix();
@@ -885,6 +946,7 @@ void y_box(float h) {
 	glEnd();
 }
 
+/*
 void stone(float x, float y, float z, float sLength) {
 
 	glBegin( GL_QUADS );
@@ -927,14 +989,77 @@ void stone(float x, float y, float z, float sLength) {
 
 	glEnd();
 }
+*/
+
+static void nearCallback(void *data, dGeomID o1,dGeomID o2){
+    dBodyID b1=dGeomGetBody(o1);
+    dBodyID b2=dGeomGetBody(o2);
+
+    const int MAX_CONTACTS=8;
+    dContact contact[MAX_CONTACTS];
+
+    int num_contacts=dCollide(o1,o2,MAX_CONTACTS,
+			      &contact[0].geom,sizeof(dContact));
+
+    for(int i=0;i<num_contacts;i++){
+	//parameters might subject to change
+	contact[i].surface.mode=dContactApprox0;
+	contact[i].surface.mu=5;
+	dJointID c=dJointCreateContact(world,contactgroup,contact+i);
+	dJointAttach(c,b1,b2);
+    }
+}
+
+void* simLoop(void*){
+    //Simulation Here
+    float interval=CLOCKS_PER_SEC*0.05;
+    clock_t start=clock();
+    clock_t end;
+    while(true){
+	end=clock();
+	if(float(end-start)>interval){
+	    ModelerApplication::Instance()->modelerView->redraw();
+            dSpaceCollide(space,0,&nearCallback);
+            dWorldQuickStep(world,0.1);
+	    dJointGroupEmpty(contactgroup);
+	    start=end;
+	}
+    }
+}
 
 int main()
 {
     
+    ModelerApplication::Instance()->Init(&createRobotArm);
+    
+    //TODO: set up ode world
+    dInitODE();
+/*
+    dsFunctions fn;
+    fn.version=DS_VERSION;
+    fn.start=0;
+    fn.step=&simLoop;
+    fn.command=0;
+    fn.stop=0; //can change
+*/    
+    world=dWorldCreate();
+    dWorldSetGravity(world,0,-9.8,0);
+    dWorldSetQuickStepNumIterations(world,50);
+
+    space=dSimpleSpaceCreate(0);
+    contactgroup=dJointGroupCreate(0);
+    dGeomID ground=dCreatePlane(space,0,1,0,0);
+
+    pthread_t simulationThread;
+    int rc=pthread_create(&simulationThread,NULL,&simLoop,NULL);
+
+
+
 	// You should create a ParticleSystem object ps here and then
 	// call ModelerApplication::Instance()->SetParticleSystem(ps)
 	// to hook it up to the animator interface.
 
-    ModelerApplication::Instance()->Init(&createRobotArm);
-    return ModelerApplication::Instance()->Run();
+    ModelerApplication::Instance()->Run();
+
+    dCloseODE();
 }

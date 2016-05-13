@@ -48,7 +48,7 @@ void ModelerApplication::Init(ModelerViewCreator_f createView)
     
     m_ui = new ModelerUI();
     
-	ModelerView* modelerView = createView(0, 0, 100, 100 ,NULL);
+	modelerView = createView(0, 0, 100, 100 ,NULL);
 	m_ui->replaceModelerView(modelerView);
 }
 

@@ -9,6 +9,9 @@
 #include "vec.h"
 #include "vecOps.h"
 
+using std::cout;
+using std::endl;
+
 class BoundingBox;
 
 class Plane{
@@ -51,6 +54,7 @@ public:
 
 };
 
+/*
 class Contact{
 public:
     BoundingBox* a;
@@ -70,6 +74,7 @@ public:
     Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
 	a(a),b(b),p(p),n(n),ea(ea),eb(eb),vf(false) {}
 };
+*/
 
 class BoundingBox {
 public:	
@@ -98,7 +103,7 @@ public:
 	    updateVertices();
 	}
 
-	friend std::vector<Contact*> getContancts(BoundingBox* A, BoundingBox* B);
+	//friend std::vector<Contact*> getContancts(BoundingBox* A, BoundingBox* B);
 
 	void updateVertices(){
 	    vertices.clear();
@@ -170,7 +175,7 @@ public:
 	}
 
 };
-
+/*
 bool insideSquare(Vec3f p,Vec3f vertex1,Vec3f vertex2,Vec3f vertex3,Vec3f vertex4){
     float length=(vertex1-vertex2).length();
     float d1=(VectorOps::crossProduct(p-vertex1,p-vertex2)).length()/(vertex2-vertex1).length();
@@ -326,7 +331,12 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x0=(1/(1-pow(C[0][0],2.0f)))*
 		 (A->vec1*D+C[0][0]*(C[1][0]*x1+C[2][0]*x2-B->vec1*D)+C[0][1]*y1+C[0][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross11,B->vec1,A->vec1));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -343,7 +353,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x0=(1/(1-pow(C[0][1],2.0f)))*
 		 (A->vec1*D+C[0][1]*(C[1][1]*x1+C[2][1]*x2-B->vec2*D)+C[0][0]*y0+C[0][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross12,B->vec2,A->vec1));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -360,7 +376,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x0=(1/(1-pow(C[0][2],2.0f)))*
 		 (A->vec1*D+C[0][2]*(C[1][2]*x1+C[2][2]*x2-B->vec3*D)+C[0][0]*y0+C[0][1]*y1);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross13,B->vec3,A->vec1));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -377,7 +399,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x1=(1/(1-pow(C[1][0],2.0f)))*
 		 (A->vec2*D+C[1][0]*(C[0][0]*x0+C[2][0]*x2-B->vec1*D)+C[1][1]*y1+C[1][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross21,B->vec1,A->vec2));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -394,7 +422,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x1=(1/(1-pow(C[1][1],2.0f)))*
 		 (A->vec2*D+C[1][1]*(C[0][1]*x0+C[2][1]*x2-B->vec2*D)+C[1][0]*y0+C[1][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross22,B->vec2,A->vec2));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -407,12 +441,18 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	int sigma=cross23*D>0 ? 1 : -1;
 	float x0=sigma*pow(-1,negativeFlag(C[2][2]))*A->a1;
 	float x2=-sigma*pow(-1,negativeFlag(C[0][2]))*A->a3;
-	float y0=-sigma*pow(-1,negativeFlag(C[1][2]))*B->a1;
+	float y0=-sigma*pow(-1,negativeFlag(C[1][1]))*B->a1;
 	float y1=sigma*pow(-1,negativeFlag(C[1][0]))*B->a2;
 	float x1=(1/(1-pow(C[1][2],2.0f)))*
 		 (A->vec2*D+C[1][2]*(C[0][2]*x0+C[2][2]*x2-B->vec3*D)+C[1][0]*y0+C[1][1]*y1);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	cout<<"y1: "<<y1<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross23,B->vec3,A->vec2));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -430,7 +470,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x2=(1/(1-pow(C[2][0],2.0f)))*
 		 (A->vec3*D+C[2][0]*(C[0][0]*x0+C[1][0]*x1-B->vec1*D)+C[2][1]*y1+C[2][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross31,B->vec1,A->vec3));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -448,7 +494,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x2=(1/(1-pow(C[2][1],2.0f)))*
 		 (A->vec3*D+C[2][1]*(C[0][1]*x0+C[1][1]*x1-B->vec2*D)+C[2][0]*y0+C[2][2]*y2);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross32,B->vec2,A->vec3));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -466,7 +518,13 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 	float x2=(1/(1-pow(C[2][2],2.0f)))*
 		 (A->vec3*D+C[2][2]*(C[0][2]*x0+C[1][2]*x1-B->vec3*D)+C[2][0]*y0+C[2][1]*y1);
 	
-	Vec3f pt(x0,x1,x2);
+	//Vec3f pt(x0,x1,x2);
+	//Vec3f pt=A->center+Vec3f(x0,x1,x2);
+	cout<<"center: "<<A->center<<endl;
+	cout<<"x0: "<<x0<<endl;
+	cout<<"x1: "<<x1<<endl;
+	cout<<"x2: "<<x2<<endl;
+	Vec3f pt=A->center+x0*A->vec1+x1*A->vec2+x2*A->vec3;
 	returnVal.push_back(new Contact(B,A,pt,sigma*cross33,B->vec3,A->vec3));
 
 	//Contact(BoundingBox* a, BoundingBox* b, Vec3f p, Vec3f n, Vec3f ea, Vec3f eb) :
@@ -474,3 +532,4 @@ std::vector<Contact*> getContacts(BoundingBox* A, BoundingBox* B){
 
     return returnVal;
 }
+*/
