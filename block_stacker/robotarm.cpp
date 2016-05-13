@@ -1,5 +1,9 @@
-// The sample robotarm model.  You should build a file
-// very similar to this for when you make your model.
+/*
+ *    Authors
+ * Xiaohui Chen (xc2388)
+ * YiChi Zhang (yz9449)
+ */
+
 #pragma warning (disable : 4305)
 #pragma warning (disable : 4244)
 #pragma warning(disable : 4786)
@@ -72,6 +76,8 @@ float hclawMax=FLT_MAX;
 
 Vec3f magnetPos (0, 0, 0);
 
+bool gameOverFlag;
+
 //must add stone on this region(variant)
 bool dropOnGround = true;
 float xMin=-2.5;
@@ -109,34 +115,22 @@ class RobotArm : public ModelerView
 {
 private:
     Stone* targetStone;
+    Stone* highestStone;
     bool isHooked;
+    int numStonePlaced;
 
     BoundingBox* lowerArmBox;
     BoundingBox* upperArmBox;
     BoundingBox* clawTipBox;
     BoundingBox* clawCylinderBox;
+
+    float generateLength(){
+	return 1.0f+0.6*drand48();
+    }
 public:
     RobotArm(int x, int y, int w, int h, char *label) 
         : ModelerView(x,y,w,h,label) {
-	
-	isHooked=false;
-	targetStone=0;
-
-	//TODO: make colors and positions random
-    Vec3f color0 ( 0.45, 0.45, 0.45 );
-	Vec3f color1 ( 0.35, 0.35, 0.35 );
-	Vec3f color2 ( 0.45, 0.45, 0.45 );
-	Vec3f color3 ( 0.55, 0.55, 0.55 );
-	Vec3f color4 ( 0.65, 0.65, 0.65 );
-
-	stoneVec.push_back(new Stone( 3.5, 1.2, 1, 1.2, color0));
-	stoneVec.push_back(new Stone( -5, 1.2, 3, 1.2, color1));
-	stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
-	stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
-	stoneVec.push_back(new Stone(  2, 1.2, 4, 1.2, color4));
-
-	magnetPos=updateMagnetPos();
-
+	reset();
     }
 
     float getAltitude(Vec3f magPos);
@@ -185,12 +179,22 @@ bool inRightPosition(Vec3f pos,float length){
 }
 
 void RobotArm::reset(){
+
+    gameOverFlag=false;
+    numStonePlaced=0;
+
+    dJointGroupEmpty(contactgroup);
+    for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
+	if((*it)->isInPosition){
+	    dBodyDestroy((*it)->body);
+	    dGeomDestroy((*it)->geom);
+	}
+    }
+
     theta = 0.0;
     phi = 55.0;
     psi = 30.0;
     cr = 0.0;
-    crMin=-30.0;
-    crMax=180.0;
     h1 = 0.8;
     h2 = 3.0;
     h3 = 2.5;
@@ -199,6 +203,7 @@ void RobotArm::reset(){
 
     isHooked=false;
     targetStone=0;
+    highestStone=0;
 
     dropOnGround = true;
 	xMin=-2.5;
@@ -208,13 +213,7 @@ void RobotArm::reset(){
 
 	score = 0.0;
 
-    Vec3f color0 ( 0.45, 0.45, 0.45 );
-    Vec3f color1 ( 0.35, 0.35, 0.35 );
-    Vec3f color2 ( 0.45, 0.45, 0.45 );
-    Vec3f color3 ( 0.55, 0.55, 0.55 );
-    Vec3f color4 ( 0.65, 0.65, 0.65 );
-
-    char text[500];
+        char text[500]="";
 	strcat (text,"Game Start: \n\n\t        [---Instructions---]\n\t|  Use Up, Down, Left, Right   |\n\t|  to control the perspective, |\n\t|  Use w, a, s, d, 1, 2, 3, 4        |\n\t|  to control the stacker]        |\n\n");
 	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
 	buffer->text(text);
@@ -222,11 +221,16 @@ void RobotArm::reset(){
 
     stoneVec.clear();
 
-    stoneVec.push_back(new Stone( 3.5, 1.2, 1, 1.2, color0));
-    stoneVec.push_back(new Stone( -5, 1.2, 3, 1.2, color1));
-    stoneVec.push_back(new Stone( -2, 1.2, 4, 1.2, color2));
-    stoneVec.push_back(new Stone( -6, 1.2, -4.5, 1.2, color3));
-    stoneVec.push_back(new Stone( 2, 1.2, 4, 1.2, color4));
+    float lengths[5];
+    for(int i=0;i<5;i++){
+	lengths[i]=generateLength();
+    }
+    
+    stoneVec.push_back(new Stone( 3.5, lengths[0], 1, lengths[0], Vec3f(drand48(),drand48(),drand48())));
+    stoneVec.push_back(new Stone( -5, lengths[1], 3, lengths[1], Vec3f(drand48(),drand48(),drand48())));
+    stoneVec.push_back(new Stone( -2, lengths[2], 4, lengths[2], Vec3f(drand48(),drand48(),drand48())));
+    stoneVec.push_back(new Stone( -6, lengths[3], -4.5, lengths[3], Vec3f(drand48(),drand48(),drand48())));
+    stoneVec.push_back(new Stone( 2, lengths[4], 4, lengths[4], Vec3f(drand48(),drand48(),drand48())));
     magnetPos=updateMagnetPos();
 
 }
@@ -344,6 +348,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        isHooked=false;
 			targetStone->setIsInPosition(true);
 		        targetStone->setIsOnMagnet(false);
+			targetStone->inPositionY=(targetStone->getCenter())[1];
 			targetStone->body=dBodyCreate(world);
 			Vec3f center=targetStone->getCenter();
 			dBodySetPosition(targetStone->body,center[0],center[1],center[2]);
@@ -356,6 +361,8 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 			dBodySetMass(targetStone->body,&(targetStone->mass));
 			dBodySetGravityMode(targetStone->body,1);
 
+			numStonePlaced++;
+
 		        //set for the right region(can only add on stone, not square)
 		        xMin = targetStone->getPosition()[0] - targetStone->getSLength();
 		        xMax = targetStone->getPosition()[0] + targetStone->getSLength();
@@ -363,6 +370,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        zMax = targetStone->getPosition()[2] + targetStone->getSLength();
 
 		        score += targetStone->getSLength();
+			highestStone=targetStone;
 
 		    	char text[500];
 				strcpy (text,buffer->text());
@@ -371,6 +379,12 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 				char foo[10];
 				sprintf(foo, "%.2f\n\n", score);
 				strcat (text,foo);
+				if(numStonePlaced==stoneVec.size()){
+				    strcat(text,"\tALL STONE PLACED!!!\n");
+				    strcat(text,"\tfinal score: ");
+				    sprintf(foo, "%.2f\n\n", score);
+				    strcat(text,foo);
+				}
 				//strcat (text,"\tcurrent score: 01 \n\n");
 				buffer->text(text);
 
@@ -399,10 +413,11 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 				    oldQName=qName;
 			    }
 			}
+
 			int diffSign=fabs(oldStepSize)*oldStepSize<0;
 			while(lowerArmBox->intersect(*(*it)) || upperArmBox->intersect(*(*it)) ||
 		       	      clawTipBox->intersect(*(*it)) || clawCylinderBox->intersect(*(*it))){
-			    qName-=pow(-1,diffSign)*tolerence;
+		     	    qName-=pow(-1,diffSign)*tolerence;
 			    magPos=updateMagnetPos();
 			    deltaX=magPos[0]-magnetPos[0];
 			    deltaY=magPos[1]-magnetPos[1];
@@ -590,18 +605,18 @@ int RobotArm::handle(int event)
 			//cout<<Fl::event_key()<<endl;
 			switch(Fl::event_key())
 			{
-				case 97: update(theta,thetaMin,thetaMax,0.5);	break;//a
-				case 100: update(theta,thetaMin,thetaMax,-0.5);	break;//d
-				case 119: update(hclaw,hclawMin,hclawMax, -0.05); break;//w
-				case 115: update(hclaw,hclawMin,hclawMax,0.05);   break;//s
-				case 49: update(phi,psiMin,psiMax,-0.3);	break;//1
-				case 50: update(phi,psiMin,psiMax,0.3);	break;//2
-				case 51: update(h3,h3Min,h3Max,0.05);	break;//3
-				case 52: update(h3,h3Min,h3Max,-0.05);	break;//4
-				case 53: update(psi,psiMin,psiMax,-0.3);	break;//5
-				case 54: update(psi,psiMin,psiMax,0.3);	break;//6
-				case 55: update(cr,crMin,crMax,1.0);	break;//7
-				case 56: update(cr,crMin,crMax,-1.0);	break;//8
+				case 97: if(!gameOverFlag) update(theta,thetaMin,thetaMax,0.5);	break;//a
+				case 100: if(!gameOverFlag) update(theta,thetaMin,thetaMax,-0.5);	break;//d
+				case 119: if(!gameOverFlag) update(hclaw,hclawMin,hclawMax, -0.05); break;//w
+				case 115: if(!gameOverFlag) update(hclaw,hclawMin,hclawMax,0.05);   break;//s
+				case 49: if(!gameOverFlag) update(phi,psiMin,psiMax,-0.3);	break;//1
+				case 50: if(!gameOverFlag) update(phi,psiMin,psiMax,0.3);	break;//2
+				case 51: if(!gameOverFlag) update(h3,h3Min,h3Max,0.05);	break;//3
+				case 52: if(!gameOverFlag) update(h3,h3Min,h3Max,-0.05);	break;//4
+				case 53: if(!gameOverFlag) update(psi,psiMin,psiMax,-0.3);	break;//5
+				case 54: if(!gameOverFlag) update(psi,psiMin,psiMax,0.3);	break;//6
+				case 55: if(!gameOverFlag) update(cr,crMin,crMax,1.0);	break;//7
+				case 56: if(!gameOverFlag) update(cr,crMin,crMax,-1.0);	break;//8
 				case 65307: reset();    break;//Esc
 				default: return ModelerView::handle(event);
 			}
@@ -701,6 +716,22 @@ void RobotArm::draw()
 		for(auto it=stoneVec.begin();it!=stoneVec.end();it++){
 		    if((*it)->isInPosition){
 			(*it)->updatePosition();
+			if(abs((*it)->inPositionY-((*it)->getCenter())[1])>(*it)->sLength/2.0f){
+			    if(!gameOverFlag){
+				char text[500];
+				Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
+				strcpy (text,buffer->text());
+				strcat (text,"\t...GAME OVER!!!...\n");
+				strcat (text,"\tfinal score: ");
+				char foo[10];
+				sprintf(foo, "%.2f\n\n", score-highestStone->sLength);
+				strcat (text,foo);
+				//strcat (text,"\tcurrent score: 01 \n\n");
+				buffer->text(text);
+
+			    }
+			    gameOverFlag=true;
+			}
 		    }
 		        (*it)->drawStone();
 		}
@@ -947,50 +978,6 @@ void y_box(float h) {
 	glEnd();
 }
 
-/*
-void stone(float x, float y, float z, float sLength) {
-
-	glBegin( GL_QUADS );
-
-	glNormal3d( 1.0 ,0.0, 0.0);			// +x side
-	glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
-	glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
-
-	glNormal3d( 0.0 ,0.0, -1.0);		// -z side
-	glVertex3d( x + sLength / 2.0, y - sLength, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
-
-	glNormal3d(-1.0, 0.0, 0.0);			// -x side
-	glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
-	glVertex3d( x - sLength / 2.0, y - sLength, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
-
-	glNormal3d( 0.0, 0.0, 1.0);			// +z side
-	glVertex3d( x + sLength / 2.0, y - sLength, z + sLength / 2.0);
-	glVertex3d( x - sLength / 2.0, y - sLength, z + sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
-
-	glNormal3d( 0.0, 1.0, 0.0);			// top (+y)
-	glVertex3d( x + sLength / 2.0,  y, z + sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y, z + sLength / 2.0);
-
-	glNormal3d( 0.0,-1.0, 0.0);			// bottom (-y)
-	glVertex3d( x + sLength / 2.0,  y - sLength, z + sLength / 2.0);
-	glVertex3d( x + sLength / 2.0,  y - sLength, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y - sLength, z - sLength / 2.0);
-	glVertex3d( x - sLength / 2.0,  y - sLength, z + sLength / 2.0);
-
-	glEnd();
-}
-*/
 
 static void nearCallback(void *data, dGeomID o1,dGeomID o2){
     dBodyID b1=dGeomGetBody(o1);
@@ -1004,7 +991,7 @@ static void nearCallback(void *data, dGeomID o1,dGeomID o2){
 
     for(int i=0;i<num_contacts;i++){
 	//parameters might subject to change
-	contact[i].surface.mode=dContactApprox0;
+	contact[i].surface.mode=dContactApprox1;
 	contact[i].surface.mu=5;
 	dJointID c=dJointCreateContact(world,contactgroup,contact+i);
 	dJointAttach(c,b1,b2);
@@ -1015,7 +1002,7 @@ void* simLoop(void*){
     //Simulation Here
     float interval=CLOCKS_PER_SEC*0.05;
     clock_t start=clock();
-    clock_t end;
+    clock_t end;    
     while(true){
 	end=clock();
 	if(float(end-start)>interval){
@@ -1031,25 +1018,19 @@ void* simLoop(void*){
 int main()
 {
     
-    ModelerApplication::Instance()->Init(&createRobotArm);
     
     //TODO: set up ode world
     dInitODE();
-/*
-    dsFunctions fn;
-    fn.version=DS_VERSION;
-    fn.start=0;
-    fn.step=&simLoop;
-    fn.command=0;
-    fn.stop=0; //can change
-*/    
+   
     world=dWorldCreate();
-    dWorldSetGravity(world,0,-9.8,0);
+    dWorldSetGravity(world,0,-0.5,0);
     dWorldSetQuickStepNumIterations(world,50);
 
     space=dSimpleSpaceCreate(0);
     contactgroup=dJointGroupCreate(0);
     dGeomID ground=dCreatePlane(space,0,1,0,0);
+   
+    ModelerApplication::Instance()->Init(&createRobotArm);
 
     pthread_t simulationThread;
     int rc=pthread_create(&simulationThread,NULL,&simLoop,NULL);
@@ -1061,6 +1042,11 @@ int main()
 	// to hook it up to the animator interface.
 
     ModelerApplication::Instance()->Run();
+
+    dJointGroupDestroy(contactgroup);
+    dWorldDestroy(world);
+    dGeomDestroy(ground);
+    dSpaceDestroy(space);
 
     dCloseODE();
 }

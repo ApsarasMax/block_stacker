@@ -60,6 +60,7 @@ private:
 public:
     float sLength;
     bool isInPosition;
+    float inPositionY;
 
     //TODO: add rigid body motion
 
