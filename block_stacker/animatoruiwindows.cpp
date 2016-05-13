@@ -13,16 +13,16 @@ ModelerUIWindows::ModelerUIWindows() {
     o->end();
   }
 
-  { Fl_Window* o = m_pwndScoreWnd = new Fl_Window(300, 500, "Score");//add 400 on both length and width//zyc
+  { Fl_Window* o = m_pwndScoreWnd = new Fl_Window(350, 500, "Score");//add 400 on both length and width//zyc
     w = o;
     o->user_data((void*)(this));
     o->when(FL_WHEN_NEVER);
     { 
       Fl_Text_Buffer *buff = m_pwndTxtBuf = new Fl_Text_Buffer();
-      Fl_Text_Display* o = m_pwndTxtDis = new Fl_Text_Display(0, 0, 300, 500, "string");
+      Fl_Text_Display* o = m_pwndTxtDis = new Fl_Text_Display(0, 0, 350, 500, "string");
       o->buffer(buff);
       o->show();
-      buff->text("Game Start: \n\n");
+      buff->text("Game Start: \n\n\t        [---Instructions---]\n\t|  Use Up, Down, Left, Right   |\n\t|  to control the perspective, |\n\t|  Use w, a, s, d, 1, 2, 3, 4        |\n\t|  to control the stacker]        |\n\n");
     }
     o->end();
   }

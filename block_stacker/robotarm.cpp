@@ -123,7 +123,7 @@ public:
 	targetStone=0;
 
 	//TODO: make colors and positions random
-        Vec3f color0 ( 0.45, 0.45, 0.45 );
+    Vec3f color0 ( 0.45, 0.45, 0.45 );
 	Vec3f color1 ( 0.35, 0.35, 0.35 );
 	Vec3f color2 ( 0.45, 0.45, 0.45 );
 	Vec3f color3 ( 0.55, 0.55, 0.55 );
@@ -214,6 +214,12 @@ void RobotArm::reset(){
     Vec3f color3 ( 0.55, 0.55, 0.55 );
     Vec3f color4 ( 0.65, 0.65, 0.65 );
 
+    char text[500];
+	strcat (text,"Game Start: \n\n\t        [---Instructions---]\n\t|  Use Up, Down, Left, Right   |\n\t|  to control the perspective, |\n\t|  Use w, a, s, d, 1, 2, 3, 4        |\n\t|  to control the stacker]        |\n\n");
+	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
+	buffer->text(text);
+
+
     stoneVec.clear();
 
     stoneVec.push_back(new Stone( 3.5, 1.2, 1, 1.2, color0));
@@ -230,11 +236,6 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
         
 	//experiment//zyc
 	Fl_Text_Buffer *buffer=ModelerApplication::Instance()->GetUI()->m_pwndTxtBuf;
-	// char text[200];
-	// strcpy (text,buffer->text());
-	// strcat (text,"strings \n");
-	// //cout<<text<<endl;
-	// buffer->text(text);
 
     float tolerence=0.005;
     float oldQName=qName;
@@ -415,7 +416,7 @@ void RobotArm::update(float& qName,float min, float max, float stepSize){
 		        isHooked=true;
 		        targetStone->setIsOnMagnet(true);
 
-		    	char text[200];
+		    	char text[500];
 				strcpy (text,buffer->text());
 				strcat (text,"\t...hooked...\n");
 				buffer->text(text);
@@ -726,7 +727,7 @@ void square(float frameSLength){
 
 void ground(float frameSLength){
 	glDisable(GL_LIGHTING);
-	glColor3f(0.65,0.45,0.4);
+	glColor3f(0.75,0.45,0.6);
 	glPushMatrix();
 		glScalef(30,0,30);
 		y_box(1);
